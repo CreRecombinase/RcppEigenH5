@@ -1,0 +1,14 @@
+Package: RcppEigenH5
+Type: Package
+Title: What the Package Does (Title Case)
+Version: 0.1.0
+Author: Who wrote it
+Maintainer: The package maintainer <yourself@somewhere.net>
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: GPL (>=2)
+Imports: Rcpp (>= 0.12.9.2), RcppParallel (>= 4.3.20),RcppEigen
+LinkingTo: Rcpp, RcppParallel, RcppEigen
+Encoding: UTF-8
+LazyData: true
+Suggests: testthat

@@ -1,0 +1,4 @@
+useDynLib("RcppEigenH5")
+exportPattern("^[[:alpha:]]+")
+importFrom(Rcpp, evalCpp)
+importFrom(RcppParallel,RcppParallelLibs)
