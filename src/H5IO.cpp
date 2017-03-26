@@ -1,16 +1,18 @@
 #include <RcppEigenH5.h>
+#include <valarray>
 //[[Rcpp::depends(RcppEigen)]]
 using namespace Eigen;
 
-void read_2ddmat_h5(const std::string h5file, const std::string groupname, const std::string dataname,const size_t row_offset,const size_t col_offset,const size_t row_chunksize,const size_t col_chunksize, double* data){
+void read_2ddmat_h5(const std::string h5file, const std::string groupname, const std::string dataname,const size_t row_offset,const size_t col_offset,const size_t row_chunksize,const size_t col_chunksize,  double* data){
+
   //Try breaking up reads in to chunks
   H5FilePtr file=open_file(h5file);
   H5GroupPtr group= open_group(file,groupname);
   H5DataSetPtr dataset = open_dataset(group,dataname);
-  DSetCreatPropList cparms= dataset->getCreatePlist();
 
-  size_t cache_elem=0;
-  size_t cache_bytes=0;
+
+   // Rcpp::Rcout<<"row_chunksize is :"<<row_chunksize<<std::endl;
+   // Rcpp::Rcout<<"col_chunksize is :"<<col_chunksize<<std::endl;
   DataType dt= dataset->getDataType();
   hsize_t datadims[]={0,0};
   DataSpace fspace=dataset->getSpace();
@@ -18,10 +20,10 @@ void read_2ddmat_h5(const std::string h5file, const std::string groupname, const
   //  std::cout<<"Full data is of dimensions"<<datadims[0]<<"x"<<datadims[1]<<std::endl;
   hsize_t matrix_dims[2];
   if(row_offset+row_chunksize>datadims[0]){
-    Rcpp::stop("row_offset+row_chunksize>datadims[0]!");
+    Rcpp::stop("row_offset ("+std::to_string(row_offset)+") + row_chunksize ("+std::to_string(row_chunksize)+") >datadims[0] ("+std::to_string(datadims[0])+")");
   }
   if(col_offset+col_chunksize>datadims[1]){
-    Rcpp::stop("col_offset+col_chunksize>datadims[1]!");
+    Rcpp::stop("col_offset ("+std::to_string(col_offset)+") + col_chunksize ("+std::to_string(col_chunksize)+") >datadims[1] ("+std::to_string(datadims[1])+")");
   }
 
   // std::cout<<"read consists of"<<colchunknum*rowchunknum<<"chunks"<<std::endl;
@@ -46,6 +48,7 @@ void read_2ddmat_h5(const std::string h5file, const std::string groupname, const
   //  std::cout<<"Reading data"<<std::endl;
   dataset->read(data,dt,memspace,fspace);
   //  std::cout<<"Read complete!"<<std::endl;
+
   dt.close();
   memspace.close();
   fspace.close();
@@ -354,24 +357,53 @@ Eigen::ArrayXi read_ivec_h5(const std::string h5file, const std::string groupnam
 
 
 
-Eigen::MatrixXd read_2d_cindex_h5(const std::string h5file,const std::string groupname, const std::string dataname, const  Eigen::ArrayXi indvec){
+void read_2d_cindex_h5(const std::string h5file,const std::string groupname, const std::string dataname, const  Eigen::ArrayXi indvec, Matrix_internal retmat){
 
-  int minind = indvec.minCoeff();
-  int maxind = indvec.maxCoeff();
-  int chunksize=maxind-minind+1;
-  size_t rownum = get_rownum_h5(h5file,groupname,dataname);
+  // Rcpp::Rcout<<"Starting!"<<std::endl;
+
+  const  int minind (indvec.minCoeff());
+  const  int maxind(indvec.maxCoeff());
+  const  int t_chunksize((maxind-minind)+1);
+  // Rcpp::Rcout<<"t_chunksize is :"<<t_chunksize<<std::endl;
+  // Rcpp::Rcout<<"maxind-minind+1 is "<<maxind-minind+1<<std::endl;
+
+
+  // Rcpp::Rcout<<"indvec is :"<<std::endl<<indvec<<std::endl;
+  // Rcpp::Rcout<<"minind :"<<minind<<std::endl;
+  // Rcpp::Rcout<<"maxind :"<<maxind<<std::endl;
+
+  const int rownum(get_rownum_h5(h5file,groupname,dataname));
+
   Eigen::ArrayXi rowind(rownum);
+
   rowind.setLinSpaced(rownum,0,rownum-1);
-  //  Rcpp::Rcout<<"rowind is :"<<std::endl<<rowind<<std::endl;
-  ArrayXi newind=indvec-minind;
-  //  Rcpp::Rcout<<"colind is :"<<std::endl<<newind<<std::endl;
-  Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> readmat(rownum,chunksize);
-  //  Rcpp::Rcout<<"About to read  matrix"<<std::endl;
-  read_2ddmat_h5(h5file,groupname,dataname,0,minind-1,rownum,chunksize,readmat.data());
-  //  Rcpp::Rcout<<"Finished reading matrix"<<std::endl;
-  //  Rcpp::Rcout<<"readmat has "<<readmat.rows()<<" rows and "<<readmat.cols()<<" cols"<<std::endl;
-  //  Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::ColMajor> readmat(rownum,chunksize);
-  return(indexing(readmat,rowind,newind));
+
+  const Eigen::ArrayXi newind=indvec-minind;
+
+
+  //Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> readmat(rownum,t_chunksize);
+  double *x =(double* )malloc(rownum*t_chunksize*sizeof(double));
+  Eigen::Map<Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> > readmat((double*)x,rownum,t_chunksize);
+  // Rcpp::Rcout<<"Sum of x is "<<readmat.sum()<<std::endl;
+  memset((double* )x,0,rownum*t_chunksize*sizeof(double));
+  // Rcpp::Rcout<<"Sum of x is "<<readmat.sum()<<std::endl;
+  //  Rcpp::Rcout<<"chunksize is :"<<t_chunksize<<std::endl;
+  read_2ddmat_h5(h5file,groupname,dataname,0,minind-1,rownum,t_chunksize,x);
+
+  //    Eigen::Map<Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> > readmat(x,rownum,t_chunksize);
+
+  // Rcpp::Rcout<<"Sum of x is "<<readmat.sum()<<std::endl;
+
+  //Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::ColMajor> retmat(rownum,t_chunksize);
+  int indsize=indvec.size();
+  for(int i=0; i<indsize; i++){
+    retmat.col(i)=readmat.col(newind(i));
+  }
+//  retmat=indexing(readmat,rowind,newind);
+  //    free(x);
+  // Rcpp::Rcout<<"Sum of x is "<<retmat.sum()<<std::endl;
+
+  //    return(retmat);
 }
 
 
@@ -386,14 +418,20 @@ Eigen::ArrayXd read_1d_cindex_h5(const std::string h5file,const std::string grou
   ArrayXi colind(1);
   colind[0]=0;
   //  Rcpp::Rcout<<"colind is :"<<std::endl<<newind<<std::endl;
-  Eigen::MatrixXd readmat(chunksize,1);
+  Eigen::ArrayXd readvec(chunksize,1);
   //  Rcpp::Rcout<<"About to read  matrix"<<std::endl;
-  read_dvec_h5(h5file,groupname,dataname,minind-1,chunksize,readmat.data());
+  readvec=read_dvec_h5(h5file,groupname,dataname,minind-1,chunksize);
   //  Rcpp::Rcout<<"Finished reading matrix"<<std::endl;
   //  Rcpp::Rcout<<"readmat has "<<readmat.rows()<<" rows and "<<readmat.cols()<<" cols"<<std::endl;
   //  Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::ColMajor> readmat(rownum,chunksize);
-  Eigen::MatrixXd tmat=indexing(readmat,newind,newind);
-  return(tmat.col(0).array());
+//  Eigen::MatrixXd tmat=indexing(readmat,newind,newind);
+  int indsize=indvec.size();
+  Eigen::ArrayXd retvec(indsize);
+
+  for(int i=0; i<indsize; i++){
+    retvec.coeffRef(i)=readvec.coeffRef(newind.coeff(i));
+  }
+  return(retvec);
 }
 
 

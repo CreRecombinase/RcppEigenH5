@@ -50,6 +50,7 @@ test_that("subsetting matrix columns works as expected",{
 
 
   library(h5)
+
   test_mat <-matrix(runif(9*8),9,8)
   tfile <- tempfile()
   th5f <- h5file(tfile,'a')
@@ -57,9 +58,12 @@ test_that("subsetting matrix columns works as expected",{
   h5close(th5f)
   sub_read_mat <- read_2d_index_h5(tfile,"/","test",as.integer(c(1,3,5)))
   expect_equal(sub_read_mat,test_mat[,c(1,3,5)])
+
   rc_sub_mat <- RColumbo::read_ind_h5(tfile,"/","test",c(1,3,5))
   expect_equal(sub_read_mat,rc_sub_mat)
+
   sub_read_mat <- read_2d_index_h5(tfile,"/","test",as.integer(c(2,3,6)))
+  rc_sub_mat <- RColumbo::read_ind_h5(tfile,"/","test",c(2,3,6))
   expect_equal(sub_read_mat,test_mat[,c(2,3,6)])
 })
 
@@ -71,10 +75,11 @@ test_that("subsetting vectors works as expected",{
   th5f <- h5file(tfile,'a')
   th5f['test'] <- test_vec
   h5close(th5f)
-sub_vec <- read_1d_index_h5(tfile,"/","test",as.integer(c(1,3,5)))
-
-
+  sub_vec <- read_1d_index_h5(tfile,"/","test",as.integer(c(1,3,5)))
+  expect_equal(sub_vec,test_vec[c(1,3,5)])
 })
+
+
 test_that("Attributes are read and written correctly",{
 
   tfile <- tempfile()

@@ -6,12 +6,12 @@
 
 using namespace H5;
 
-bool file_exists (const std::string& name);
+ bool f_exists (const std::string name);
 
 typedef std::shared_ptr<H5::H5File> H5FilePtr;
 
 
-H5FilePtr create_or_open_file(const std::string &fname);
+H5FilePtr create_or_open_file(const std::string fname);
 
-H5FilePtr open_file(const std::string &fname);
+H5FilePtr open_file(const std::string fname);
 #endif

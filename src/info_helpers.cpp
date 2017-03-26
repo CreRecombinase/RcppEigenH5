@@ -11,7 +11,7 @@ int get_rownum_h5(const std::string h5file,const std::string groupname, const st
   fspace.close();
   dataset->close();
   file->close();
-  int retnum=(int)datadim[0];
+  int retnum=datadim[0];
   return(retnum);
 }
 
@@ -26,7 +26,7 @@ int get_colnum_h5(const std::string h5file,const std::string groupname, const st
   fspace.close();
   dataset->close();
   file->close();
-  int retnum=(int)datadim[1];
+  int retnum=datadim[1];
   return(retnum);
 }
 
