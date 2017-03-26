@@ -20,10 +20,10 @@ void read_2ddmat_h5(const std::string h5file, const std::string groupname, const
   //  std::cout<<"Full data is of dimensions"<<datadims[0]<<"x"<<datadims[1]<<std::endl;
   hsize_t matrix_dims[2];
   if(row_offset+row_chunksize>datadims[0]){
-    Rcpp::stop("row_offset ("+std::to_string(row_offset)+") + row_chunksize ("+std::to_string(row_chunksize)+") >datadims[0] ("+std::to_string(datadims[0])+")");
+    Rcpp::stop("row_offset ("+std::to_string((int)row_offset)+") + row_chunksize ("+std::to_string((int)row_chunksize)+") >datadims[0] ("+std::to_string((int)datadims[0])+")");
   }
   if(col_offset+col_chunksize>datadims[1]){
-    Rcpp::stop("col_offset ("+std::to_string(col_offset)+") + col_chunksize ("+std::to_string(col_chunksize)+") >datadims[1] ("+std::to_string(datadims[1])+")");
+    Rcpp::stop("col_offset ("+std::to_string((int)col_offset)+") + col_chunksize ("+std::to_string((int)col_chunksize)+") >datadims[1] ("+std::to_string((int)datadims[1])+")");
   }
 
   // std::cout<<"read consists of"<<colchunknum*rowchunknum<<"chunks"<<std::endl;
