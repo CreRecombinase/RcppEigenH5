@@ -5,6 +5,22 @@ read_data_attr_h5 <- function(h5filename, h5_groupname, h5_dataname, h5_attr_nam
     .Call('RcppEigenH5_read_data_attr_h5_exp', PACKAGE = 'RcppEigenH5', h5filename, h5_groupname, h5_dataname, h5_attr_name)
 }
 
+write_data_string_attr_h5 <- function(h5filename, h5_groupname, h5_dataname, h5_attr_name, h5_attr_value) {
+    invisible(.Call('RcppEigenH5_write_data_string_attr_h5_exp', PACKAGE = 'RcppEigenH5', h5filename, h5_groupname, h5_dataname, h5_attr_name, h5_attr_value))
+}
+
+write_group_string_attr_h5 <- function(h5filename, h5_groupname, h5_attr_name, h5_attr_value) {
+    invisible(.Call('RcppEigenH5_write_group_string_attr_h5_exp', PACKAGE = 'RcppEigenH5', h5filename, h5_groupname, h5_attr_name, h5_attr_value))
+}
+
+write_data_int_attr_h5 <- function(h5filename, h5_groupname, h5_dataname, h5_attr_name, h5_attr_value) {
+    invisible(.Call('RcppEigenH5_write_data_int_attr_h5_exp', PACKAGE = 'RcppEigenH5', h5filename, h5_groupname, h5_dataname, h5_attr_name, h5_attr_value))
+}
+
+write_group_int_attr_h5 <- function(h5filename, h5_groupname, h5_attr_name, h5_attr_value) {
+    invisible(.Call('RcppEigenH5_write_group_int_attr_h5_exp', PACKAGE = 'RcppEigenH5', h5filename, h5_groupname, h5_attr_name, h5_attr_value))
+}
+
 read_group_attr_h5 <- function(h5file, groupname, attr_name) {
     .Call('RcppEigenH5_read_group_attr_h5_exp', PACKAGE = 'RcppEigenH5', h5file, groupname, attr_name)
 }
@@ -15,6 +31,14 @@ read_2d_h5 <- function(h5file, groupname, dataname, offset, chunksize) {
 
 read_1d_h5 <- function(h5file, groupname, dataname, offset, chunksize) {
     .Call('RcppEigenH5_read_1d_h5', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, offset, chunksize)
+}
+
+read_dvec <- function(h5file, groupname, dataname) {
+    .Call('RcppEigenH5_read_dvec_exp', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname)
+}
+
+read_ivec <- function(h5file, groupname, dataname) {
+    .Call('RcppEigenH5_read_ivec_exp', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname)
 }
 
 read_1i_h5 <- function(h5file, groupname, dataname, offset, chunksize) {
@@ -47,5 +71,21 @@ list_groups_h5 <- function(h5file, base_group = "/") {
 
 list_attrs_h5 <- function(h5file, base_group = "/") {
     .Call('RcppEigenH5_h5ls_attr_exp', PACKAGE = 'RcppEigenH5', h5file, base_group)
+}
+
+get_h5_version <- function() {
+    .Call('RcppEigenH5_get_h5_version_exp', PACKAGE = 'RcppEigenH5')
+}
+
+write_mat_h5 <- function(h5file, groupname, dataname, data, deflate_level = as.integer( c(0))) {
+    invisible(.Call('RcppEigenH5_write_mat_h5_exp', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, data, deflate_level))
+}
+
+write_dvec_h5 <- function(h5file, groupname, dataname, data, deflate_level = as.integer( c(0))) {
+    invisible(.Call('RcppEigenH5_write_dvec_h5_exp', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, data, deflate_level))
+}
+
+write_ivec_h5 <- function(h5file, groupname, dataname, data, deflate_level = as.integer( c(0))) {
+    invisible(.Call('RcppEigenH5_write_ivec_h5_exp', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, data, deflate_level))
 }
 

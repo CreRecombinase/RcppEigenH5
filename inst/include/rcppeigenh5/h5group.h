@@ -6,8 +6,8 @@
 
 typedef std::shared_ptr<H5::Group> H5GroupPtr;
 
-H5GroupPtr create_or_open_group(H5FilePtr &file,const std::string &groupname);
+H5GroupPtr create_or_open_group(H5FilePtr &file,const std::string groupname);
 
-H5GroupPtr open_group(H5FilePtr &file,const std::string &groupname);
+H5GroupPtr open_group(H5FilePtr &file,const std::string groupname);
 
 #endif

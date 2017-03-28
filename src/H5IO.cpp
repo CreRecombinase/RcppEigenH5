@@ -1,8 +1,9 @@
-#include <RcppEigenH5.h>
-#include <valarray>
+#include "RcppEigenH5.h"
 #include <type_traits>
 //[[Rcpp::depends(RcppEigen)]]
 using namespace Eigen;
+
+
 
 void read_2ddmat_h5(const std::string h5file, const std::string groupname, const std::string dataname,const size_t row_offset,const size_t col_offset,const size_t row_chunksize,const size_t col_chunksize,  double* data){
 

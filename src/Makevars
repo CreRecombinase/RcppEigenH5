@@ -2,6 +2,7 @@ HDF5_CFLAGS = -I/usr/local/include
 HDF5_LIBS = -L/usr/local/lib  -L/usr/local/lib/ -lhdf5_cpp -lhdf5 -lz -lblosc
 BLOSC_LIBS = 
 BLOSC_CFLAGS = 
+
 PKG_LIBS += $(LAPACK_LIBS) $(HDF5_LIBS) $(BLAS_LIBS) $(FLIBS) $(BLOSC_LIBS)
-PKG_CPPFLAGS = $(HDF5_CFLAGS) -I../inst/include $(BLOSC_CFLAGS)
+PKG_CPPFLAGS += $(HDF5_CFLAGS) -I../inst/include $(BLOSC_CFLAGS)
 CXX_STD = CXX11

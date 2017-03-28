@@ -58,3 +58,23 @@ std::vector<std::string> h5ls_attr_exp(std::string h5file,std::string base_group
   return(attrNames);
 }
 
+//[[Rcpp::export(name="get_h5_version")]]
+StringVector get_h5_version_exp(){
+
+  StringVector ret(1);
+  unsigned int majnum=0;
+  unsigned int minnum=0;
+  unsigned int relnum=0;
+  // H5::H5Library::initH5cpp();
+
+  H5::H5Library::getLibVersion(majnum,minnum,relnum);
+
+  std::string ret_string=std::to_string(static_cast<long long>(majnum))+"."+std::to_string(static_cast<long long>(minnum))+"."+std::to_string(static_cast<long long>(relnum));
+  ret[0]=ret_string;
+  return(ret);
+}
+
+
+
+
+

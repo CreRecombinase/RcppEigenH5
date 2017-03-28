@@ -7,7 +7,7 @@ if test -z "${R_HOME}"; then
   exit 1
 fi
 
-
+AC_CHECK_PROG(H5LSV,h5ls --version,`h5ls --version`)
 
 AC_CHECK_PROG(H5CPP,h5c++,`which h5c++`)
 if test -z "${H5CPP}"; then

@@ -592,6 +592,7 @@ HDF5_LIBS
 HDF5_CFLAGS
 GREP
 H5CPP
+H5LSV
 target_alias
 host_alias
 build_alias
@@ -1687,6 +1688,42 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 if test -z "${R_HOME}"; then
   echo "could not determine R_HOME"
   exit 1
+fi
+
+# Extract the first word of "h5ls --version", so it can be a program name with args.
+set dummy h5ls --version; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_H5LSV+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$H5LSV"; then
+  ac_cv_prog_H5LSV="$H5LSV" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_H5LSV="`h5ls --version`"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+H5LSV=$ac_cv_prog_H5LSV
+if test -n "$H5LSV"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $H5LSV" >&5
+$as_echo "$H5LSV" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
 

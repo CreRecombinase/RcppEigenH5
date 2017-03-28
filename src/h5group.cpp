@@ -2,7 +2,7 @@
 
 
 
-H5GroupPtr create_or_open_group(H5FilePtr &file,const std::string &groupname)
+H5GroupPtr create_or_open_group(H5FilePtr &file,const std::string groupname)
 {
   Group* group;
   Group *rg = new Group(file->openGroup("/"));
@@ -37,7 +37,7 @@ H5GroupPtr create_or_open_group(H5FilePtr &file,const std::string &groupname)
   return H5GroupPtr(group);
 }
 
-H5GroupPtr open_group(H5FilePtr &file,const std::string &groupname)
+H5GroupPtr open_group(H5FilePtr &file,const std::string groupname)
 {
   Group* group;
   Group *rg;

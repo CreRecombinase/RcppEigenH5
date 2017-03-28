@@ -14,6 +14,8 @@ Eigen::MatrixXd read_2d_h5_exp(const StringVector h5file, const StringVector gro
 
   return(read_2d_h5(th5file,tgroupname,tdataname,as<Eigen::ArrayXi>(offset),as<Eigen::ArrayXi>(chunksize)));
 }
+
+
 //[[Rcpp::export]]
 Eigen::ArrayXd read_1d_h5(const StringVector h5file, const StringVector groupname, const StringVector dataname,const  IntegerVector offset ,const  IntegerVector chunksize){
 
@@ -24,6 +26,27 @@ Eigen::ArrayXd read_1d_h5(const StringVector h5file, const StringVector groupnam
   size_t v_chunksize=chunksize[0];
   return(read_dvec_h5(th5file,tgroupname,tdataname,v_offset,v_chunksize));
 }
+
+
+//[[Rcpp::export(name="read_dvec")]]
+Eigen::ArrayXd read_dvec_exp(const StringVector h5file, const StringVector groupname, const StringVector dataname){
+
+  std::string th5file(h5file[0]);
+  std::string tgroupname(groupname[0]);
+  std::string tdataname(dataname[0]);
+  return(read_dvec_h5(th5file,tgroupname,tdataname));
+}
+
+//[[Rcpp::export(name="read_ivec")]]
+Eigen::ArrayXi read_ivec_exp(const StringVector h5file, const StringVector groupname, const StringVector dataname){
+
+  std::string th5file(h5file[0]);
+  std::string tgroupname(groupname[0]);
+  std::string tdataname(dataname[0]);
+  return(read_ivec_h5(th5file,tgroupname,tdataname));
+}
+
+
 
 //[[Rcpp::export]]
 Eigen::ArrayXi read_1i_h5(const StringVector h5file, const StringVector groupname, const StringVector dataname,const  IntegerVector offset ,const  IntegerVector chunksize){
@@ -100,3 +123,5 @@ Eigen::ArrayXd read_1d_index_h5(const StringVector h5file,const StringVector gro
   return(read_1d_cindex_h5(th5file,tgroupname,tdataname,ivec));
 
 }
+
+
