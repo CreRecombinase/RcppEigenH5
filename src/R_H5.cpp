@@ -95,20 +95,51 @@ Eigen::MatrixXd read_2d_index_h5(const StringVector h5file,const StringVector gr
     ivec.coeffRef(i)=indvec[i];
   }
 
-//  Eigen::ArrayXi ivec(as<Eigen::ArrayXi>(indvec));
+  //  Eigen::ArrayXi ivec(as<Eigen::ArrayXi>(indvec));
   const  int i_colnum(indvec.size());
   const  int i_rownum (get_rownum_h5(th5file,tgroupname,tdataname));
 
-//  Rcpp::Rcout<<"retmat should be "<<i_rownum<<"x"<<i_colnum<<std::endl;
+  //  Rcpp::Rcout<<"retmat should be "<<i_rownum<<"x"<<i_colnum<<std::endl;
   Eigen::MatrixXd retmat(i_rownum,i_colnum);
 
   retmat.setZero();
-//  Rcpp::Rcout<<"";
-//   Rcpp::Rcout<<"retmat is "<<retmat.rows()<<"x"<<retmat.cols()<<std::endl;
+  //  Rcpp::Rcout<<"";
+  //   Rcpp::Rcout<<"retmat is "<<retmat.rows()<<"x"<<retmat.cols()<<std::endl;
   read_2d_cindex_h5(th5file,tgroupname,tdataname,ivec,retmat);
 
   return(retmat);
 }
+
+
+//[[Rcpp::export]]
+Eigen::MatrixXd read_2d_index_chunk_h5(const StringVector h5file,const StringVector groupname, const StringVector dataname,const IntegerVector indvec,const IntegerVector chunksize){
+
+  size_t csize=chunksize[0];
+  std::string th5file(h5file[0]);
+  std::string tgroupname(groupname[0]);
+  std::string tdataname(dataname[0]);
+
+  Eigen::ArrayXi ivec(indvec.size());
+  for(int i=0; i<indvec.size(); i++){
+    ivec.coeffRef(i)=indvec[i];
+  }
+
+  //  Eigen::ArrayXi ivec(as<Eigen::ArrayXi>(indvec));
+  const  int i_colnum(indvec.size());
+  const  int i_rownum (get_rownum_h5(th5file,tgroupname,tdataname));
+
+  //  Rcpp::Rcout<<"retmat should be "<<i_rownum<<"x"<<i_colnum<<std::endl;
+  Eigen::MatrixXd retmat(i_rownum,i_colnum);
+
+  retmat.setZero();
+  //  Rcpp::Rcout<<"";
+  //   Rcpp::Rcout<<"retmat is "<<retmat.rows()<<"x"<<retmat.cols()<<std::endl;
+  read_2d_cindex_chunk_h5(th5file,tgroupname,tdataname,ivec,retmat,csize);
+
+  return(retmat);
+}
+
+
 
 //[[Rcpp::export]]
 Eigen::ArrayXd read_1d_index_h5(const StringVector h5file,const StringVector groupname, const StringVector dataname, const  IntegerVector indvec){

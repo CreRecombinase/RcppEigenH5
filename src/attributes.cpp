@@ -1,5 +1,41 @@
 #include "RcppEigenH5.h"
-#include "H5Cpp.h"
+
+
+int write_transpose(H5DataSetPtr dataset, bool doTranspose){
+  IntType intdatatype(PredType::NATIVE_INT);
+  DataSpace att_space(H5S_SCALAR);
+  int transpose_attr=0;
+  if(doTranspose){
+    transpose_attr=1;
+  }
+  Attribute attr = dataset->createAttribute("doTranspose",intdatatype,att_space);
+  attr.write(intdatatype,&transpose_attr);
+  attr.close();
+  att_space.close();
+  return(transpose_attr);
+}
+
+
+int get_int_attr(H5DataSetPtr dataset,std::string attr_name){
+  Attribute attr = dataset->openAttribute(attr_name);
+  int ireadbuf=0;
+  DataType rdatatype = attr.getDataType();
+  attr.read(rdatatype, &ireadbuf);
+  attr.close();
+  return(ireadbuf);
+}
+
+
+bool check_transpose(H5DataSetPtr dataset){
+
+  if(!dataset->attrExists("doTranspose")){
+    return(false);
+  }
+  return(get_int_attr(dataset,"doTranspose")==1);
+}
+
+
+
 
 std::string read_data_attr_h5(const std::string h5file, const std::string groupname, const std::string dataname,const std::string attr_name){
   using namespace H5;
@@ -10,6 +46,7 @@ std::string read_data_attr_h5(const std::string h5file, const std::string groupn
   H5DataSetPtr dataset = open_dataset(group,dataname);
   Attribute attr = dataset->openAttribute(attr_name);
 
+
   DataType strdatatype = attr.getDataType();
   attr.read(strdatatype, strreadbuf);
   dataset->close();
@@ -18,6 +55,110 @@ std::string read_data_attr_h5(const std::string h5file, const std::string groupn
 
   return(strreadbuf);
 }
+
+int read_idata_attr_h5(const std::string h5file, const std::string groupname, const std::string dataname,const std::string attr_name){
+  using namespace H5;
+  int ireadbuf=0;
+
+  H5FilePtr file=open_file(h5file);
+  H5GroupPtr group= open_group(file,groupname);
+  H5DataSetPtr dataset = open_dataset(group,dataname);
+  Attribute attr = dataset->openAttribute(attr_name);
+
+
+  DataType rdatatype = attr.getDataType();
+  attr.read(rdatatype, &ireadbuf);
+  dataset->close();
+  group->close();
+  file->close();
+  return(ireadbuf);
+}
+
+
+int read_igroup_attr_h5(const std::string h5file, const std::string groupname,const std::string attr_name){
+  using namespace H5;
+  int ireadbuf=0;
+
+  H5FilePtr file=open_file(h5file);
+  H5GroupPtr group= open_group(file,groupname);
+  Attribute attr = group->openAttribute(attr_name);
+
+
+  DataType rdatatype = attr.getDataType();
+  attr.read(rdatatype, &ireadbuf);
+  group->close();
+  file->close();
+  return(ireadbuf);
+}
+
+
+std::string read_group_attr_h5(const std::string h5file, const std::string groupname,const std::string attr_name){
+  using namespace H5;
+  H5std_string strreadbuf ("");
+
+  H5FilePtr file=open_file(h5file);
+  H5GroupPtr group= open_group(file,groupname);
+
+  Attribute attr = group->openAttribute(attr_name);
+
+  DataType strdatatype = attr.getDataType();
+  attr.read(strdatatype, strreadbuf);
+  group->close();
+  file->close();
+  return(strreadbuf);
+}
+
+std::vector<int> read_data_iarray_attr_h5(const std::string h5file, const std::string groupname, const std::string dataname,const std::string attrname){
+  using namespace H5;
+
+  H5FilePtr file=open_file(h5file);
+  H5GroupPtr group= open_group(file,groupname);
+  H5DataSetPtr dataset = open_dataset(group,dataname);
+
+  Attribute attr = dataset->openAttribute(attrname);
+  DataSpace fspace=attr.getSpace();
+  hsize_t datadims[]={0};
+  fspace.getSimpleExtentDims(datadims,NULL);
+  //  std::cout<<"Full data is of dimensions"<<datadims[0]<<"x"<<datadims[1]<<std::endl;
+  DataType adatat = attr.getDataType();
+
+  std::vector<int> retvec(datadims[0]);
+  attr.read(adatat, &retvec[0]);
+  fspace.close();
+  group->close();
+  file->close();
+  return(retvec);
+
+
+}
+
+std::vector<int> read_group_iarray_attr_h5(const std::string h5file, const std::string groupname,const std::string attrname){
+  using namespace H5;
+
+  H5FilePtr file=open_file(h5file);
+  H5GroupPtr group= open_group(file,groupname);
+
+  Attribute attr = group->openAttribute(attrname);
+
+  DataSpace fspace=attr.getSpace();
+  hsize_t datadims[]={0};
+  fspace.getSimpleExtentDims(datadims,NULL);
+  //  std::cout<<"Full data is of dimensions"<<datadims[0]<<"x"<<datadims[1]<<std::endl;
+  DataType adatat = attr.getDataType();
+
+  std::vector<int> retvec(datadims[0]);
+  attr.read(adatat, &retvec[0]);
+  fspace.close();
+  group->close();
+  file->close();
+  return(retvec);
+}
+
+
+
+
+
+
 
 
 void write_data_string_attr_h5(const std::string h5file, const std::string groupname, const std::string dataname,const std::string attr_name,const std::string attr_value){
@@ -79,83 +220,8 @@ void write_data_int_attr_h5(const std::string h5file, const std::string groupnam
 
 
 
-std::string read_group_attr_h5(const std::string h5file, const std::string groupname,const std::string attr_name){
-  using namespace H5;
-  H5std_string strreadbuf ("");
-
-  H5FilePtr file=open_file(h5file);
-  H5GroupPtr group= open_group(file,groupname);
-
-  Attribute attr = group->openAttribute(attr_name);
-
-  DataType strdatatype = attr.getDataType();
-  attr.read(strdatatype, strreadbuf);
-  group->close();
-  file->close();
-  return(strreadbuf);
-}
 
 
-//[[Rcpp::export(name="read_data_attr_h5")]]
-Rcpp::CharacterVector read_data_attr_h5_exp(const StringVector h5filename, const StringVector h5_groupname, const StringVector h5_dataname,const StringVector h5_attr_name){
-  std::string h5file(h5filename[0]);
-  std::string groupname(h5_groupname[0]);
-  std::string dataname(h5_dataname[0]);
-  std::string attr_name(h5_attr_name[0]);
 
-  return(Rcpp::wrap(read_data_attr_h5(h5file,groupname,dataname,attr_name)));
-}
-
-
-//[[Rcpp::export(name="write_data_string_attr_h5")]]
-void write_data_string_attr_h5_exp(const StringVector h5filename, const StringVector h5_groupname, const StringVector h5_dataname,const StringVector h5_attr_name, const StringVector h5_attr_value){
-  std::string h5file(h5filename[0]);
-  std::string groupname(h5_groupname[0]);
-  std::string dataname(h5_dataname[0]);
-  std::string attr_name(h5_attr_name[0]);
-  std::string attr_value(h5_attr_value[0]);
-
-  write_data_string_attr_h5(h5file,groupname,dataname,attr_name,attr_value);
-}
-
-//[[Rcpp::export(name="write_group_string_attr_h5")]]
-void write_group_string_attr_h5_exp(const StringVector h5filename, const StringVector h5_groupname,const StringVector h5_attr_name, const StringVector h5_attr_value){
-  std::string h5file(h5filename[0]);
-  std::string groupname(h5_groupname[0]);
-  std::string attr_name(h5_attr_name[0]);
-  std::string attr_value(h5_attr_value[0]);
-
-  write_group_string_attr_h5(h5file,groupname,attr_name,attr_value);
-
-}
-
-
-//[[Rcpp::export(name="write_data_int_attr_h5")]]
-void write_data_int_attr_h5_exp(const StringVector h5filename, const StringVector h5_groupname, const StringVector h5_dataname,const StringVector h5_attr_name, const IntegerVector h5_attr_value){
-  std::string h5file(h5filename[0]);
-  std::string groupname(h5_groupname[0]);
-  std::string dataname(h5_dataname[0]);
-  std::string attr_name(h5_attr_name[0]);
-  int attr_value(h5_attr_value[0]);
-
-  write_data_int_attr_h5(h5file,groupname,dataname,attr_name,attr_value);
-}
-
-//[[Rcpp::export(name="write_group_int_attr_h5")]]
-void write_group_int_attr_h5_exp(const StringVector h5filename, const StringVector h5_groupname,const StringVector h5_attr_name, const IntegerVector h5_attr_value){
-  std::string h5file(h5filename[0]);
-  std::string groupname(h5_groupname[0]);
-  std::string attr_name(h5_attr_name[0]);
-  int attr_value(h5_attr_value[0]);
-
-  write_group_int_attr_h5(h5file,groupname,attr_name,attr_value);
-
-}
-
-
-//[[Rcpp::export(name="read_group_attr_h5")]]
-Rcpp::CharacterVector read_group_attr_h5_exp(const std::string h5file, const std::string groupname,const std::string attr_name){
-  return(Rcpp::wrap(read_group_attr_h5(h5file,groupname,attr_name)));
-}
 
 

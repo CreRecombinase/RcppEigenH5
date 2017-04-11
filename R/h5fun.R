@@ -69,6 +69,32 @@ read_df_h5 <- function(h5filepath,groupname=NULL,subcols=NULL,filtervec=NULL){
 }
 
 
+transpose_mat <- function(infilename,ingroupname,indataname,outfilename,outgroupname,outdataname,chunksize=100000,index=NULL){
+  library(BBmisc)
+  library(dplyr)
+  tot_col <-get_colnum_h5(infilename,ingroupname,indataname)
+  if(is.null(index)){
+    index <- 1:tot_col
+  }
+  tot_col <- length(index)
+  tot_row <- get_rownum_h5(infilename,ingroupname,indataname)
+  tot_chunks <- ceiling(tot_col/chunksize)
+  create_mat_dataset_h5(h5file = outfilename,groupname = outgroupname,dataname = outdataname,dims = as.integer(c(tot_row,tot_col)),chunkdims = c(tot_row,min(c(10000,tot_col))),deflate_level = 4L,doTranspose = T)
+  tot_colo <- get_colnum_h5(outfilename,groupname = outgroupname,dataname = outdataname)
+  stopifnot(tot_colo==tot_col)
+  ichunks <-chunk(index,chunk.size = chunksize)
+  index_df <- data_frame(index=index) %>% mutate(data_ind=1:n(),chunks=cut(data_ind,tot_chunks,labels=F,include.lowest=T))
+  ichunks <- split(index_df,index_df$chunks)
+  for(i in 1:length(ichunks)){
+    cat(i," of ",length(ichunks),"\n")
+    chunk <-ichunks[[i]][["index"]]
+    writechunk <- ichunks[[i]][["data_ind"]]
+    datam <-read_2d_index_h5(infilename,ingroupname,indataname,indvec = chunk)
+    write_mat_chunk_h5(outfilename,outgroupname,outdataname,datam,offsets = as.integer(c(0L,writechunk[1]-1)))
+  }
+
+}
+
 libpath <- function() {
   cat(sprintf(
     "%s/RcppEigenH5/libs/RcppEigenH5%s",
@@ -76,4 +102,87 @@ libpath <- function() {
     .Platform$dynlib.ext
   ))
 }
+
+
+
+
+
+
+read_ccs_h5 <- function(h5filename,groupname,dataname="data",iname="ir",pname="jc",isSymmetric=NULL){
+  # require("h5")
+  require("Matrix")
+
+  stopifnot(file.exists(h5filename))
+  h5gn <- list_groups_h5(h5filename)
+  stopifnot(groupname %in% h5gn)
+
+  # h5g <- h5f[groupname]
+  h5_attrs <- list_attrs_h5(h5file = h5filename,base_group = groupname)
+  if("Layout" %in% h5_attrs){
+
+    layout <- read_group_attr_h5(h5file = h5filename,groupname = groupname,attr_name = "Layout")
+    stopifnot(layout=="CCS")
+  }
+
+  data <- read_dvec(h5filename,groupname,dataname)
+  i <- read_ivec(h5filename,groupname,iname)
+  p <- read_ivec(h5filename,groupname,pname)
+  rows <- NULL
+  cols <- NULL
+  if("rows" %in% h5_attrs){
+    rows <- read_igroup_attr_h5(h5filename,groupname,"rows")
+  }
+  if("cols" %in% h5_attrs){
+    cols <- read_igroup_attr_h5(h5filename,groupname,"cols")
+  }
+  if(is.null(rows)){
+    rows <- cols
+  }
+  if(is.null(cols)){
+    cols <- rows
+  }
+  dims <- c(rows,cols)
+  if(is.null(dims)){
+    if("Dimensions" %in% h5_attrs){
+      dims <- read_group_iarray_attr_h5(h5filename,groupname,"Dimensions")
+    }else{
+      stop("Must specify rows,cols or Dimensions with sparse matrix storage")
+    }
+  }
+  return(Matrix::sparseMatrix(i=i,p=p,x=data,index1 = F,dims = dims))
+}
+
+
+
+write_df_h5 <- function(df,groupname,outfile,deflate_level=4L,chunksize=1000L){
+  if(nrow(df)<chunksize){
+    chunksize <- nrow(df)
+  }
+  deflate_level <- as.integer(deflate_level)
+  require(h5)
+  dataname <- colnames(df)
+  f <-h5file(outfile,mode = 'a')
+  if(existsGroup(f,groupname)){
+    h5close(f)
+    res <- append_df_h5(df,groupname,outfile,deflate_level)
+    return(res)
+  }
+  group <- createGroup(f,groupname)
+  for(i in 1:length(dataname)){
+    dsn <- dataname[i]
+    td <- df[[dsn]]
+    tdata <- createDataSet(.Object = group,
+                           datasetname = dsn,
+                           type = typeof(td),
+                           dimensions = length(td),
+                           chunksize =chunksize,
+                           maxdimensions = NA_integer_,
+                           compression = deflate_level)
+    tdata[] <- td
+  }
+  h5close(f)
+  return(T)
+}
+
+
 

@@ -2,6 +2,14 @@
 #define RCPPEIGENH5_TYPES_H
 
 #include <RcppEigen.h>
+#include <H5Cpp.h>
+#include <memory>
+
+using namespace H5;
+
+typedef std::shared_ptr<Group> H5GroupPtr;
+typedef std::shared_ptr<H5File> H5FilePtr;
+typedef std::shared_ptr<DataSet> H5DataSetPtr;
 
 typedef Eigen::Array<double, Eigen::Dynamic, 1> ColumnArray;
 typedef Eigen::Array<double, 1,Eigen::Dynamic > RowArray;
@@ -17,6 +25,8 @@ typedef Eigen::MappedSparseMatrix<double> c_sparseMatrix_internal;
 typedef Eigen::Ref<const Eigen::MatrixXd > c_Matrix_internal;
 typedef Eigen::Ref<Eigen::MatrixXd > Matrix_internal;
 typedef Eigen::Ref<Eigen::ArrayXd> arrayxd_internal;
+typedef Eigen::Ref<Eigen::ArrayXi> arrayxi_internal;
+
 typedef Eigen::Ref<Eigen::ArrayXXd> arrayxxd_internal;
 typedef Eigen::Ref<ColumnArray> column_internal;
 typedef Eigen::Ref<RowArray> row_internal;

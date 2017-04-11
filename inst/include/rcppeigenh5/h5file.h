@@ -2,13 +2,12 @@
 #define H5FILE_H
 
 #include <H5Cpp.h>
+#include "RcppEigenH5_types.h"
 #include <memory>
 
 using namespace H5;
 
- bool f_exists (const std::string name);
-
-typedef std::shared_ptr<H5::H5File> H5FilePtr;
+bool f_exists (const std::string name);
 
 
 H5FilePtr create_or_open_file(const std::string fname);

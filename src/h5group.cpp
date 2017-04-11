@@ -13,6 +13,7 @@ H5GroupPtr create_or_open_group(H5FilePtr &file,const std::string groupname)
   bool fgroup=false;
   if(objc!=0){
     for(hsize_t i=0; i<objc;i++){
+
       std::string tst=rg->getObjnameByIdx(i);
       if(tst==groupname){
         fgroup = true;

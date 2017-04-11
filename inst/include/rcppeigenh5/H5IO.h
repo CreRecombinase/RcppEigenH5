@@ -2,6 +2,7 @@
 #define H5IO_H
 #include <H5Cpp.h>
 #include <RcppEigen.h>
+#include "rcppeigenh5/RcppEigenH5_types.h"
 
 using namespace Eigen;
 
@@ -44,21 +45,22 @@ using namespace Eigen;
 
 
 
-void read_2ddmat_h5(const std::string h5file, const std::string groupname, const std::string dataname,const size_t row_offset,const size_t col_offset,const size_t row_chunksize,const size_t col_chunksize, double* data);
+void read_2ddmat_h5(const std::string h5file, const std::string groupname, const std::string dataname, int row_offset, int col_offset, int row_chunksize, int col_chunksize, double* data);
 
 Eigen::MatrixXd read_2d_h5(const std::string h5file, const std::string groupname, const std::string dataname,const  Eigen::ArrayXi offset ,const  Eigen::ArrayXi chunksize);
 Eigen::MatrixXd read_2d_h5(const std::string h5file, const std::string groupname, const std::string dataname);
 
-void read_dvec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const size_t offset,const size_t chunksize, double* data);
-Eigen::ArrayXd read_dvec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const size_t offset,const size_t chunksize);
+void read_dvec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const int offset,const int chunksize, double* data);
+Eigen::ArrayXd read_dvec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const int offset,const int chunksize);
 Eigen::ArrayXd read_dvec_h5(const std::string h5file, const std::string groupname, const std::string dataname);
 
 
-void read_ivec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const size_t offset,const size_t chunksize, int* data);
-Eigen::ArrayXi read_ivec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const size_t offset,const size_t chunksize);
+void read_ivec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const int offset,const int chunksize, int* data);
+Eigen::ArrayXi read_ivec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const int offset,const int chunksize);
 Eigen::ArrayXi read_ivec_h5(const std::string h5file, const std::string groupname, const std::string dataname);
 
 
-void read_2d_cindex_h5(const std::string h5file,const std::string groupname, const std::string dataname, const  Eigen::ArrayXi indvec, Matrix_internal retmat);
-Eigen::ArrayXd read_1d_cindex_h5(const std::string h5file,const std::string groupname, const std::string dataname, const  Eigen::ArrayXi indvec);
+void read_2d_cindex_h5(const std::string h5file,const std::string groupname, const std::string dataname, const c_arrayxi_internal indvec, Matrix_internal retmat);
+void read_2d_cindex_chunk_h5(const std::string h5file,const std::string groupname, const std::string dataname, const c_arrayxi_internal indvec, Matrix_internal retmat,const size_t chunksize=10000);
+Eigen::ArrayXd read_1d_cindex_h5(const std::string h5file,const std::string groupname, const std::string dataname, const c_arrayxi_internal indvec);
 #endif
