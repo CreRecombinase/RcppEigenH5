@@ -61,6 +61,46 @@ Rcpp::NumericVector calc_af(const std::string h5file,const std::string groupname
 }
 
 
+Eigen::ArrayXd calc_variance(c_Matrix_internal mat){
+  int n=mat.rows();
+  return(((mat.rowwise()-(mat.colwise().mean())).array().square().colwise().sum())/(n-1));
+}
+
+
+//[[Rcpp::export]]
+Rcpp::NumericVector calc_var(const std::string h5file,const std::string groupname, const std::string dataname, const Eigen::ArrayXi index, const Rcpp::IntegerVector chunksize,bool display_progress=true){
+
+  size_t p=index.size();
+  Eigen::ArrayXd retvec(p);
+  size_t csize= chunksize[0];
+  size_t totchunks=ceil((double) p / (double) csize);
+  Eigen::ArrayXi subi;
+  size_t rownum =get_rownum_h5(h5file,groupname,dataname);
+  Eigen::MatrixXd temp(rownum,csize);
+  // Rcpp::Rcout<<"totchunks: "<<totchunks<<std::endl;
+
+  Progress pp(totchunks, display_progress);
+  for(size_t i=0; i<totchunks;i++){
+    size_t chunkstart =i*csize;
+    size_t chunkstop =std::min((p-1),((i+1)*csize)-1);
+    if (Progress::check_abort() )
+      return Rcpp::wrap(retvec);
+
+    pp.increment();
+    size_t tchunksize= chunkstop-chunkstart+1;
+    // Rcpp::Rcout<<"Chunk: "<<i<<"of size: "<<tchunksize<<std::endl;
+    // Rcpp::Rcout<<index.segment(chunkstart,tchunksize)<<std::endl;
+
+    read_2d_cindex_h5(h5file,groupname,dataname,index.segment(chunkstart,tchunksize),temp);
+
+    retvec.segment(chunkstart,tchunksize)=calc_variance(temp);
+  }
+  return(Rcpp::wrap(retvec));
+}
+
+
+
+
 
 //[[Rcpp::export]]
 Rcpp::NumericVector calc_yh(const std::string h5file,const std::string groupname, const std::string dataname, const Eigen::ArrayXi index, const Eigen::VectorXd beta,const Rcpp::IntegerVector chunksize,bool display_progress=true){

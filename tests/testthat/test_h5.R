@@ -17,6 +17,22 @@ test_that("calcAF works as expected",{
 })
 
 
+
+test_that("calcvar works as expected",{
+  test_mat <-matrix(runif(9*8),9,8)
+  test_vars <- apply(test_mat,2,var)
+  tfile <- tempfile()
+  write_mat_h5(tfile,"test","geno",data=test_mat)
+  sub_i <- c(1,3,5,7)
+  sub_vars <- calc_var(tfile,"test","geno",index = sub_i,chunksize = 2)
+  expect_equal(test_vars[sub_i],sub_vars)
+  sub_i <- c(1:8)
+  sub_vars <- calc_var(tfile,"test","geno",index = sub_i,chunksize = 1)
+  expect_equal(test_vars[sub_i],sub_vars)
+
+})
+
+
 # test_that("calcAF works as expected",{
 #   test_mat <-matrix(1:(9*8)+0.0,9,8)
 #

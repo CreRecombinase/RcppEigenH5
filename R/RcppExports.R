@@ -49,6 +49,10 @@ calc_af <- function(h5file, groupname, dataname, index, chunksize, display_progr
     .Call('RcppEigenH5_calc_af', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, index, chunksize, display_progress)
 }
 
+calc_var <- function(h5file, groupname, dataname, index, chunksize, display_progress = TRUE) {
+    .Call('RcppEigenH5_calc_var', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, index, chunksize, display_progress)
+}
+
 calc_yh <- function(h5file, groupname, dataname, index, beta, chunksize, display_progress = TRUE) {
     .Call('RcppEigenH5_calc_yh', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, index, beta, chunksize, display_progress)
 }
