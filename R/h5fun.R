@@ -69,27 +69,60 @@ read_df_h5 <- function(h5filepath,groupname=NULL,subcols=NULL,filtervec=NULL){
 }
 
 
+
 transpose_mat <- function(infilename,ingroupname,indataname,outfilename,outgroupname,outdataname,chunksize=100000,index=NULL){
   library(BBmisc)
   library(dplyr)
-  tot_col <-get_colnum_h5(infilename,ingroupname,indataname)
+  tot_col <-get_colnum_h5(infilename[1],ingroupname,indataname)
   if(is.null(index)){
     index <- 1:tot_col
   }
-  tot_col <- length(index)
-  tot_row <- get_rownum_h5(infilename,ingroupname,indataname)
-  tot_chunks <- ceiling(tot_col/chunksize)
-  create_mat_dataset_h5(h5file = outfilename,groupname = outgroupname,dataname = outdataname,dims = as.integer(c(tot_row,tot_col)),chunkdims = c(tot_row,min(c(10000,tot_col))),deflate_level = 4L,doTranspose = T)
+  if(length(infilename)>1){
+    stopifnot(length(infilename)==length(index))
+    tot_col<-sum(lengths(index))
+    tot_row <- get_rownum_h5(infilename[1],ingroupname,indataname)
+  }else{
+    tot_col <- length(index)
+    tot_row <- get_rownum_h5(infilename,ingroupname,indataname)
+    tot_chunks <- ceiling(tot_col/chunksize)
+  }
+
+  create_mat_dataset_h5(h5file = outfilename,
+                        groupname = outgroupname,
+                        dataname = outdataname,
+                        dims = as.integer(c(tot_row,tot_col)),
+                        chunkdims = c(tot_row,min(c(10000,tot_col))),
+                        deflate_level = 4L,
+                        doTranspose = T)
   tot_colo <- get_colnum_h5(outfilename,groupname = outgroupname,dataname = outdataname)
   stopifnot(tot_colo==tot_col)
-  ichunks <-chunk(index,chunk.size = chunksize)
-  index_df <- data_frame(index=index) %>% mutate(data_ind=1:n(),chunks=cut(data_ind,tot_chunks,labels=F,include.lowest=T))
-  ichunks <- split(index_df,index_df$chunks)
+  ichunksl <- list()
+  index_dfl <- list()
+  if(length(infilename)>1){
+    for(j in 1:length(infilename)){
+      cat(j,"\n")
+      #      ichunksl[[i]] <-chunk(index[[j]],chunk.size = chunksize)
+      chunknum <-max(c(ceiling(length(index[[j]])/chunksize),2))
+      index_dfl[[j]] <- data_frame(index=index[[j]],chrom=j) %>% mutate(data_ind=1:n(),chunks=cut(data_ind,chunknum,labels=F,include.lowest=T))
+    }
+    index_df <- bind_rows(index_dfl) %>% mutate(data_ind=1:n())
+    ichunks <- split(index_df,list(index_df$chrom,index_df$chunks))
+  }else{
+    index_df <-data_frame(index=index) %>% mutate(data_ind=1:n(),chunks=cut(data_ind,tot_chunks,labels=F,include.lowest=T))
+    ichunks <- split(index_df,index_df[["chunks"]])
+  }
+
   for(i in 1:length(ichunks)){
     cat(i," of ",length(ichunks),"\n")
     chunk <-ichunks[[i]][["index"]]
     writechunk <- ichunks[[i]][["data_ind"]]
-    datam <-read_2d_index_h5(infilename,ingroupname,indataname,indvec = chunk)
+    if(length(infilename)>1){
+      tinfilename <- infilename[ichunks[[i]][["chrom"]][1]]
+    }else{
+      tinfilename <- infilename
+    }
+
+    datam <-read_2d_index_h5(tinfilename,ingroupname,indataname,indvec = chunk)
     write_mat_chunk_h5(outfilename,outgroupname,outdataname,datam,offsets = as.integer(c(0L,writechunk[1]-1)))
   }
 
