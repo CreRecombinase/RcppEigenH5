@@ -58,14 +58,12 @@ test_that("calc_yh works as expected",{
   Z <-rbinom(n = p,size = 1,prob = tpi)
   beta <-numeric(p)
   beta[Z==1] <- rnorm(n = sum(Z))
-  yh <- c(test_mat%*%beta)
+  yh <- c(scale(test_mat,center = T,scale = F)%*%beta)
   tfile <- tempfile()
   write_mat_h5(tfile,"test","test",test_mat)
   bii <- which(Z==1)
   t_yh <- calc_yh(h5file = tfile,groupname = "test",dataname = "test",index = bii,beta = beta[bii],chunksize = 2)
   expect_equal(t_yh,yh)
-
-
 })
 
 
@@ -77,7 +75,7 @@ test_that("calc_yh works with 'transposed'  data",{
   Z <-rbinom(n = p,size = 1,prob = tpi)
   beta <-numeric(p)
   beta[Z==1] <- rnorm(n = sum(Z))
-  yh <- c(test_mat%*%beta)
+  yh <- c(scale(test_mat,center=T,scale=F)%*%beta)
   tfile <- tempfile()
   write_mat_h5(tfile,"test","test",test_mat,doTranspose = T)
   bii <- which(Z==1)
@@ -286,7 +284,33 @@ test_that("'transposing' and subsetting a matrix doesn't change how it's read",{
   expect_equal(test_mat,read_r)
 })
 
+test_that("'transposing' and subsetting multiple matrices doesn't change how they're read",{
+  n <- 9
+  p <- 8000
+  test_mat_1 <- matrix(runif(n*(p-1)),n,p-1)
+  tfile_1 <- tempfile()
+  test_mat_2 <- matrix(runif(n*(p+2)),n,p+2)
+  tfile_2 <- tempfile()
+  test_mat_3 <- matrix(runif(n*(p+4)),n,p+4)
+  tfile_3 <- tempfile()
 
+  write_mat_h5(tfile_1,"test","test",test_mat_1,deflate_level = 1L)
+  write_mat_h5(tfile_2,"test","test",test_mat_2,deflate_level = 1L)
+  write_mat_h5(tfile_3,"test","test",test_mat_3,deflate_level = 1L)
+  sub_i_1 <- sort(sample(1:(p-1),4,replace = F))
+  sub_i_2 <- sort(sample(1:(p+2),6,replace = F))
+  sub_i_3 <- sort(sample(1:(p+4),2,replace = F))
+  exp_mat <- cbind(test_mat_1[,sub_i_1],test_mat_2[,sub_i_2],test_mat_3[,sub_i_3])
+  ofile <- tempfile()
+  transpose_mat(infilename = c(tfile_1,tfile_2,tfile_3),
+                ingroupname = "test",
+                indataname = "test",
+                outfilename = ofile,
+                outgroupname = "test",
+                outdataname = "test",chunksize = 3,index = list(sub_i_1,sub_i_2,sub_i_3))
+  rmat <-read_2d_mat_h5(ofile,"test","test")
+  expect_equal(exp_mat,rmat)
+})
 test_that("subsetting matrix columns (chunked/transposed) works as expected",{
 
 

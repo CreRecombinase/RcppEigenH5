@@ -84,7 +84,7 @@ transpose_mat <- function(infilename,ingroupname,indataname,outfilename,outgroup
   }else{
     tot_col <- length(index)
     tot_row <- get_rownum_h5(infilename,ingroupname,indataname)
-    tot_chunks <- ceiling(tot_col/chunksize)
+    tot_chunks <- max(c(ceiling(tot_col/chunksize),2))
   }
 
   create_mat_dataset_h5(h5file = outfilename,

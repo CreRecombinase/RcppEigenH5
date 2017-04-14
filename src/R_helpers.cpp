@@ -99,7 +99,9 @@ Rcpp::NumericVector calc_var(const std::string h5file,const std::string groupnam
 }
 
 
-
+Eigen::MatrixXd scale_mat(Matrix_internal mat){
+  return((mat.rowwise()-(mat.colwise().mean())));
+}
 
 
 //[[Rcpp::export]]
@@ -117,22 +119,10 @@ Rcpp::NumericVector calc_yh(const std::string h5file,const std::string groupname
   Eigen::ArrayXd retvec(rownum);
   retvec.setZero();
   Eigen::MatrixXd temp(rownum,p);
-  // Rcpp::Rcout<<"totchunks: "<<totchunks<<std::endl;
 
-  // Progress pp(totchunks, display_progress);
-  // for(size_t i=0; i<totchunks;i++){
-    // size_t chunkstart =i*csize;
-    // size_t chunkstop =std::min((p-1),((i+1)*csize)-1);
-    // if (Progress::check_abort() )
-    //   return Rcpp::wrap(retvec);
-    //
-    // pp.increment();
-    // size_t tchunksize= chunkstop-chunkstart+1;
-    // Rcpp::Rcout<<"Chunk: "<<i<<"of size: "<<tchunksize<<std::endl;
-    // Rcpp::Rcout<<index.segment(chunkstart,tchunksize)<<std::endl;
+  read_2d_cindex_chunk_h5(h5file,groupname,dataname,index,temp,csize);
 
-    read_2d_cindex_chunk_h5(h5file,groupname,dataname,index,temp,csize);
-    retvec=retvec.matrix()+temp*beta;
+  retvec=retvec.matrix()+(temp.rowwise()-(temp.colwise().mean()))*beta;
 
   return(Rcpp::wrap(retvec));
 }
