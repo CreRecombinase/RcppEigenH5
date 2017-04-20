@@ -43,7 +43,7 @@ using namespace Eigen;
 //
 //
 
-
+std::vector<std::string> read_s1d_index_h5(const std::string h5file,const std::string groupname, const std::string dataname, const  c_arrayxi_internal indvec);
 
 void read_2ddmat_h5(const std::string h5file, const std::string groupname, const std::string dataname, int row_offset, int col_offset, int row_chunksize, int col_chunksize, double* data);
 
@@ -54,6 +54,8 @@ void read_dvec_h5(const std::string h5file, const std::string groupname, const s
 Eigen::ArrayXd read_dvec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const int offset,const int chunksize);
 Eigen::ArrayXd read_dvec_h5(const std::string h5file, const std::string groupname, const std::string dataname);
 
+std::vector<std::string> read_svec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const int offset,const int chunksize);
+std::vector<std::string> read_svec_h5(const std::string h5file, const std::string groupname, const std::string dataname);
 
 void read_ivec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const int offset,const int chunksize, int* data);
 Eigen::ArrayXi read_ivec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const int offset,const int chunksize);

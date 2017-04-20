@@ -154,6 +154,21 @@ test_that("numeric vectors written from h5 and RcppEigenH5  are read the same (b
 })
 
 
+test_that("string vectors written from h5 are read the same (by RcppEigenH5)",{
+  library(h5)
+  tessvec <-rep(sample(letters,sample(1:10),replace=T))
+  tessvec <- paste0(tessvec,sample(tessvec),sample(tessvec))
+   tfile <- tempfile()
+   th5f <- h5file(tfile,'a')
+   th5f['test'] <- tessvec
+   h5close(th5f)
+  r_tessvec <- read_svec(tfile,"/","test")
+  expect_equal(r_tessvec,tessvec)
+})
+
+
+
+
 test_that("matrices written from RcppEigen is read back the same (by h5)",{
   library(h5)
   test_mat <-matrix(runif(9*8),9,8)

@@ -253,6 +253,115 @@ Eigen::ArrayXd read_dvec_h5(const std::string h5file, const std::string groupnam
 }
 
 
+std::vector<std::string> read_svec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const int offset,const int chunksize){
+
+
+
+  char** datasa;
+
+  H5FilePtr file=open_file(h5file);
+  H5GroupPtr group= open_group(file,groupname);
+  H5DataSetPtr dataset = open_dataset(group,dataname);
+  DSetCreatPropList cparms= dataset->getCreatePlist();
+
+
+  DataType dt= dataset->getDataType();
+  hsize_t datadims[]={0};
+  DataSpace fspace=dataset->getSpace();
+  fspace.getSimpleExtentDims(datadims,NULL);
+  //  std::cout<<"Full data is of dimensions"<<datadims[0]<<"x"<<datadims[1]<<std::endl;
+  hsize_t vec_dims[1];
+  if(offset+chunksize>datadims[0]){
+    Rcpp::stop("offset+chunksize>datadims[0]!");
+  }
+
+  datasa = new char*[chunksize];
+  vec_dims[0]=chunksize;
+  datadims[0]=chunksize;
+
+  // std::cout<<"Full data is of size "<<datadim[0]<<std::endl;
+  hsize_t offseta[1];
+  offseta[0]=offset;
+
+  fspace.selectHyperslab(H5S_SELECT_SET,datadims,offseta);
+  //  std::cout<<"Allocating matrix of size:"<<matrix_dims[0]<<"x"<<matrix_dims[1]<<std::endl;
+  //  std::cout<<"Matrix starts at"<<row_offset<<"x"<<col_offset<<std::endl;
+  DataSpace memspace(1,vec_dims);
+  //  std::cout<<"Reading data"<<std::endl;
+  dataset->read((void*)datasa,dt,memspace,fspace);
+  //  std::cout<<"Read complete!"<<std::endl;
+  dt.close();
+  memspace.close();
+  fspace.close();
+  group->close();
+  dataset->close();
+  file->close();
+  std::vector<std::string> retvec(chunksize);
+  for(int i=0;i<chunksize;i++){
+    retvec[i]=std::string(datasa[i]);
+  }
+
+
+  return(retvec);
+}
+
+
+std::vector<std::string> read_svec_h5(const std::string h5file, const std::string groupname, const std::string dataname){
+
+  size_t offset=0;
+
+  char** datasa;
+
+  H5FilePtr file=open_file(h5file);
+  H5GroupPtr group= open_group(file,groupname);
+  H5DataSetPtr dataset = open_dataset(group,dataname);
+  DSetCreatPropList cparms= dataset->getCreatePlist();
+
+
+  DataType dt= dataset->getDataType();
+  hsize_t datadims[]={0};
+  DataSpace fspace=dataset->getSpace();
+  fspace.getSimpleExtentDims(datadims,NULL);
+  //  std::cout<<"Full data is of dimensions"<<datadims[0]<<"x"<<datadims[1]<<std::endl;
+  hsize_t vec_dims[1];
+  size_t  chunksize =datadims[0];
+  if(offset+chunksize>datadims[0]){
+    Rcpp::stop("offset+chunksize>datadims[0]!");
+  }
+
+  datasa = new char*[chunksize];
+  vec_dims[0]=chunksize;
+  datadims[0]=chunksize;
+
+  // std::cout<<"Full data is of size "<<datadim[0]<<std::endl;
+  hsize_t offseta[1];
+  offseta[0]=offset;
+
+  fspace.selectHyperslab(H5S_SELECT_SET,datadims,offseta);
+  //  std::cout<<"Allocating matrix of size:"<<matrix_dims[0]<<"x"<<matrix_dims[1]<<std::endl;
+  //  std::cout<<"Matrix starts at"<<row_offset<<"x"<<col_offset<<std::endl;
+  DataSpace memspace(1,vec_dims);
+  //  std::cout<<"Reading data"<<std::endl;
+  dataset->read((void*)datasa,dt,memspace,fspace);
+  //  std::cout<<"Read complete!"<<std::endl;
+  dt.close();
+  memspace.close();
+  fspace.close();
+  group->close();
+  dataset->close();
+  file->close();
+  std::vector<std::string> retvec(chunksize);
+  for(int i=0;i<chunksize;i++){
+    retvec[i]=std::string(datasa[i]);
+  }
+
+
+  return(retvec);
+}
+
+
+
+
 Eigen::ArrayXi read_ivec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const int offset,const int chunksize){
 
   H5FilePtr file=open_file(h5file);
@@ -487,7 +596,7 @@ Eigen::ArrayXd read_1d_cindex_h5(const std::string h5file,const std::string grou
   //  Rcpp::Rcout<<"Finished reading matrix"<<std::endl;
   //  Rcpp::Rcout<<"readmat has "<<readmat.rows()<<" rows and "<<readmat.cols()<<" cols"<<std::endl;
   //  Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::ColMajor> readmat(rownum,chunksize);
-//  Eigen::MatrixXd tmat=indexing(readmat,newind,newind);
+  //  Eigen::MatrixXd tmat=indexing(readmat,newind,newind);
   int indsize=indvec.size();
   Eigen::ArrayXd retvec(indsize);
 
@@ -496,6 +605,29 @@ Eigen::ArrayXd read_1d_cindex_h5(const std::string h5file,const std::string grou
   }
   return(retvec);
 }
+
+
+std::vector<std::string> read_s1d_index_h5(const std::string h5file,const std::string groupname, const std::string dataname, const  c_arrayxi_internal indvec){
+
+  int minind = indvec.minCoeff();
+  int maxind = indvec.maxCoeff();
+  int chunksize=maxind-minind+1;
+  //  Rcpp::Rcout<<"rowind is :"<<std::endl<<rowind<<std::endl;
+  ArrayXi newind=indvec-minind;
+  ArrayXi colind(1);
+  colind[0]=0;
+  //  Rcpp::Rcout<<"colind is :"<<std::endl<<newind<<std::endl;
+  std::vector<std::string> readvec(chunksize);
+  //  Rcpp::Rcout<<"About to read  matrix"<<std::endl;
+  readvec=read_svec_h5(h5file,groupname,dataname,minind-1,chunksize);
+  int indsize=indvec.size();
+  std::vector<std::string> retvec(indsize);
+  for(int i=0;i<indsize;i++){
+    retvec[i]=readvec[newind[i]];
+  }
+  return(retvec);
+}
+
 
 
 

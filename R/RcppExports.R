@@ -9,6 +9,18 @@ read_1d_h5 <- function(h5file, groupname, dataname, offset, chunksize) {
     .Call('RcppEigenH5_read_1d_h5', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, offset, chunksize)
 }
 
+read_svec <- function(h5file, groupname, dataname) {
+    .Call('RcppEigenH5_read_svec_exp', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname)
+}
+
+read_svec_chunk <- function(h5file, groupname, dataname, offset, chunksize) {
+    .Call('RcppEigenH5_read_svec_chunk_exp', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, offset, chunksize)
+}
+
+read_1d_sindex_h5 <- function(h5file, groupname, dataname, indvec) {
+    .Call('RcppEigenH5_read_1d_sindex_h5', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, indvec)
+}
+
 read_dvec <- function(h5file, groupname, dataname) {
     .Call('RcppEigenH5_read_dvec_exp', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname)
 }
