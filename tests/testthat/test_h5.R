@@ -6,12 +6,16 @@ test_that("calcAF works as expected",{
   tfile <- tempfile()
   write_mat_h5(tfile,"test","geno",data=test_mat)
   sub_i <- c(1,3,5,7)
-  sub_means <- calc_af(tfile,"test","geno",index = sub_i,chunksize = 2)
+  sub_means <- calc_af(tfile,"test","geno",index = sub_i,chunksize = 2,check_dup = F)
   expect_equal(test_means[sub_i],sub_means)
   sub_i <- c(1:8)
-  sub_means <- calc_af(tfile,"test","geno",index = sub_i,chunksize = 1)
+  sub_means <- calc_af(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
+  tmi <- test_mat
+  tmi[] <- as.integer(tmi)
+  tmd <- duplicated(tmi,MARGIN = 2)
+  test_means[tmd] <- 0
   expect_equal(test_means[sub_i],sub_means)
-  sub_means<-calc_af(tfile,"test","geno",index = sub_i,chunksize = 5)
+  sub_means<-calc_af(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
   expect_equal(test_means[sub_i],sub_means)
 
 })
@@ -416,3 +420,7 @@ test_that("Attributes are read and written correctly",{
   expect_equal(Rattr,mattr)
 
 })
+
+
+
+

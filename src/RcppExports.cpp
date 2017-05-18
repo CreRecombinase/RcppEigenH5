@@ -203,8 +203,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // calc_af
-Rcpp::NumericVector calc_af(const std::string h5file, const std::string groupname, const std::string dataname, const Eigen::ArrayXi index, const Rcpp::IntegerVector chunksize, bool display_progress);
-RcppExport SEXP RcppEigenH5_calc_af(SEXP h5fileSEXP, SEXP groupnameSEXP, SEXP datanameSEXP, SEXP indexSEXP, SEXP chunksizeSEXP, SEXP display_progressSEXP) {
+Rcpp::NumericVector calc_af(const std::string h5file, const std::string groupname, const std::string dataname, const Eigen::ArrayXi index, const Rcpp::IntegerVector chunksize, bool display_progress, bool check_dup);
+RcppExport SEXP RcppEigenH5_calc_af(SEXP h5fileSEXP, SEXP groupnameSEXP, SEXP datanameSEXP, SEXP indexSEXP, SEXP chunksizeSEXP, SEXP display_progressSEXP, SEXP check_dupSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -214,7 +214,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::ArrayXi >::type index(indexSEXP);
     Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type chunksize(chunksizeSEXP);
     Rcpp::traits::input_parameter< bool >::type display_progress(display_progressSEXP);
-    rcpp_result_gen = Rcpp::wrap(calc_af(h5file, groupname, dataname, index, chunksize, display_progress));
+    Rcpp::traits::input_parameter< bool >::type check_dup(check_dupSEXP);
+    rcpp_result_gen = Rcpp::wrap(calc_af(h5file, groupname, dataname, index, chunksize, display_progress, check_dup));
     return rcpp_result_gen;
 END_RCPP
 }

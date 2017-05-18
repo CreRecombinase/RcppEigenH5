@@ -12,7 +12,10 @@ typedef std::shared_ptr<H5File> H5FilePtr;
 typedef std::shared_ptr<DataSet> H5DataSetPtr;
 
 typedef Eigen::Array<double, Eigen::Dynamic, 1> ColumnArray;
+typedef Eigen::Matrix<double, Eigen::Dynamic, 1> ColumnMatrix;
+typedef Eigen::Matrix<char, Eigen::Dynamic, 1> ColumnMatrixi;
 typedef Eigen::Array<double, 1,Eigen::Dynamic > RowArray;
+
 
 typedef Eigen::Ref<const ColumnArray> c_column_internal;
 typedef Eigen::Ref<const RowArray> c_row_internal;

@@ -3,6 +3,9 @@ using namespace Rcpp;
 #include <algorithm>
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>
+#include <unordered_set>
+#include <unordered_map>
+
 
 
 
@@ -28,10 +31,25 @@ Rcpp::IntegerVector h5_colnum(const std::string h5file,const std::string groupna
 }
 
 
+template<typename T>
+struct matrix_hash : std::unary_function<T, size_t> {
+  std::size_t operator()(T const& matrix) const {
+    // Note that it is oblivious to the storage order of Eigen matrix (column- or
+    // row-major). It will give you the same hash value for two different matrices if they
+    // are the transpose of each other in different storage order.
+    size_t seed = 0;
+    for (size_t i = 0; i < matrix.size(); ++i) {
+      auto elem = *(matrix.data() + i);
+      seed ^= std::hash<typename T::Scalar>()(elem) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+    return seed;
+  }
+};
+
 
 //[[Rcpp::export]]
-Rcpp::NumericVector calc_af(const std::string h5file,const std::string groupname, const std::string dataname, const Eigen::ArrayXi index, const Rcpp::IntegerVector chunksize,bool display_progress=true){
-
+Rcpp::NumericVector calc_af(const std::string h5file,const std::string groupname, const std::string dataname, const Eigen::ArrayXi index, const Rcpp::IntegerVector chunksize,bool display_progress=true,bool check_dup=true){
+  using namespace Eigen;
   size_t p=index.size();
   Eigen::ArrayXd retvec(p);
   size_t csize= chunksize[0];
@@ -39,8 +57,18 @@ Rcpp::NumericVector calc_af(const std::string h5file,const std::string groupname
   Eigen::ArrayXi subi;
   size_t rownum =get_rownum_h5(h5file,groupname,dataname);
   Eigen::MatrixXd temp(rownum,csize);
-  // Rcpp::Rcout<<"totchunks: "<<totchunks<<std::endl;
+  // Eigen::Matrix<char,Dynamic,Dynamic> tempi(rownum,csize);
 
+  // Rcpp::Rcout<<"totchunks: "<<totchunks<<std::endl;
+  std::vector<bool> isDup(p);
+  std::unordered_map<ColumnMatrixi,int,matrix_hash<ColumnMatrixi> > my_map;
+  // if(check_dup){
+  // my_map.reserve(p);
+  // }
+  // std::unordered_map<Array<char,Dynamic,1>,int >::iterator my_map_it;
+
+  ColumnMatrixi ti=temp.col(0).cast<char>();
+  int tti=0;
   Progress pp(totchunks, display_progress);
   for(size_t i=0; i<totchunks;i++){
     size_t chunkstart =i*csize;
@@ -48,14 +76,24 @@ Rcpp::NumericVector calc_af(const std::string h5file,const std::string groupname
     if (Progress::check_abort() )
       return Rcpp::wrap(retvec);
 
-    pp.increment();
+
     size_t tchunksize= chunkstop-chunkstart+1;
     // Rcpp::Rcout<<"Chunk: "<<i<<"of size: "<<tchunksize<<std::endl;
     // Rcpp::Rcout<<index.segment(chunkstart,tchunksize)<<std::endl;
 
     read_2d_cindex_h5(h5file,groupname,dataname,index.segment(chunkstart,tchunksize),temp);
+    // tempi =temp.cast<char>();
     retvec.segment(chunkstart,tchunksize)=temp.colwise().mean()/2;
-
+    if(check_dup){
+      for(int c=chunkstart;c<(chunkstart+tchunksize);c++){
+        ti = temp.col(c-chunkstart).cast<char>();
+        tti=my_map[ti]++;
+        if(tti!=0){
+          retvec(c)=0;
+        }
+      }
+    }
+    pp.increment();
   }
   return(Rcpp::wrap(retvec));
 }
@@ -130,7 +168,7 @@ Rcpp::NumericVector calc_yh(const std::string h5file,const std::string groupname
 //[[Rcpp::export(name="list_groups_h5")]]
 std::vector<std::string> h5ls_grp_exp(std::string h5file,std::string base_group="/")
 {
-  H5FilePtr file=create_or_open_file(h5file);
+  H5FilePtr file=open_file(h5file);
   Group* group;
   Group *rg = new Group(file->openGroup(base_group));
   size_t num_grp_attrs=0;
@@ -150,7 +188,7 @@ std::vector<std::string> h5ls_grp_exp(std::string h5file,std::string base_group=
 //[[Rcpp::export(name="list_attrs_h5")]]
 std::vector<std::string> h5ls_attr_exp(std::string h5file,std::string base_group="/")
 {
-  H5FilePtr file=create_or_open_file(h5file);
+  H5FilePtr file=open_file(h5file);
   Group* group;
   Group *rg = new Group(file->openGroup(base_group));
   size_t num_grp_attrs=0;

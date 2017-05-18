@@ -57,8 +57,8 @@ get_colnum_h5 <- function(h5file, groupname, dataname) {
     .Call('RcppEigenH5_h5_colnum', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname)
 }
 
-calc_af <- function(h5file, groupname, dataname, index, chunksize, display_progress = TRUE) {
-    .Call('RcppEigenH5_calc_af', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, index, chunksize, display_progress)
+calc_af <- function(h5file, groupname, dataname, index, chunksize, display_progress = TRUE, check_dup = TRUE) {
+    .Call('RcppEigenH5_calc_af', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, index, chunksize, display_progress, check_dup)
 }
 
 calc_var <- function(h5file, groupname, dataname, index, chunksize, display_progress = TRUE) {

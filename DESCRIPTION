@@ -7,8 +7,8 @@ Maintainer: The package maintainer <yourself@somewhere.net>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
 License: GPL (>=2)
-Imports: Rcpp (>= 0.12.9.2), RcppParallel (>= 4.3.20),RcppEigen
-LinkingTo: Rcpp, RcppParallel, RcppEigen,RcppProgress
+Imports: Rcpp (>= 0.12.9.2), RcppParallel (>= 4.3.20),RcppEigen,BH
+LinkingTo: Rcpp, RcppParallel, RcppEigen,RcppProgress,BH
 Encoding: UTF-8
 LazyData: true
 Suggests: testthat
