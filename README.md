@@ -1,4 +1,4 @@
-#RcppEigenH5
+# RcppEigenH5
 
 Installing RcppEigenH5 (without root privelages) (on RCC) 
 
