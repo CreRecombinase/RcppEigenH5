@@ -61,6 +61,10 @@ calc_af <- function(h5file, groupname, dataname, index, chunksize, display_progr
     .Call('RcppEigenH5_calc_af', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, index, chunksize, display_progress, check_dup)
 }
 
+calc_summ_h5 <- function(h5file, groupname, dataname, index, chunksize, display_progress = TRUE, check_dup = TRUE) {
+    .Call('RcppEigenH5_calc_summ_h5', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, index, chunksize, display_progress, check_dup)
+}
+
 calc_var <- function(h5file, groupname, dataname, index, chunksize, display_progress = TRUE) {
     .Call('RcppEigenH5_calc_var', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, index, chunksize, display_progress)
 }

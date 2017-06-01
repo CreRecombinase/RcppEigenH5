@@ -22,6 +22,33 @@ test_that("calcAF works as expected",{
 
 
 
+
+test_that("calc_summ_h5 works as expected (without duplicates)",{
+  test_mat <-matrix(runif(9*8),9,8)
+  test_means <- colMeans(test_mat)/2
+  test_mins <- apply(test_mat,2,min)
+  test_maxs <- apply(test_mat,2,max)
+  dups <-duplicated(test_mat,MARGIN = 2)
+  tfile <- tempfile()
+  write_mat_h5(tfile,"test","geno",data=test_mat)
+  sub_i <- c(1,3,5,7)
+  sub_summ <- calc_summ_h5(tfile,"test","geno",index = sub_i,chunksize = 2,check_dup = F)
+  test_df <- data.frame(af=test_means[sub_i],min=test_mins[sub_i],max=test_maxs[sub_i],isDup=dups[sub_i],index=sub_i)
+  expect_equal(test_df,sub_summ)
+  sub_i <- c(1:8)
+  sub_summ <- calc_summ_h5(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
+  tmi <- test_mat
+  tmi[] <- as.integer(tmi)
+  tmd <- duplicated(tmi,MARGIN = 2)
+  test_means[tmd] <- 0
+  expect_equal(test_means[sub_i],sub_means)
+  sub_means<-calc_af(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
+  expect_equal(test_means[sub_i],sub_means)
+
+})
+
+
+
 test_that("calcvar works as expected",{
   test_mat <-matrix(runif(9*8),9,8)
   test_vars <- apply(test_mat,2,var)
@@ -97,7 +124,7 @@ test_that("calc_yh works with 'transposed' and subset  data",{
   Z <-rbinom(n = p,size = 1,prob = tpi)
   beta <-numeric(p)
   beta[Z==1] <- rnorm(n = sum(Z))
-  yh <- c(test_mat%*%beta)
+  yh <- c(scale(test_mat,center=T,scale=F)%*%beta)
   tfile <- tempfile()
   write_mat_h5(tfile,"test","test",test_mat,doTranspose = T)
   bii <- which(Z==1)

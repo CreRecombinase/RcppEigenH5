@@ -86,7 +86,7 @@ Rcpp::NumericVector calc_af(const std::string h5file,const std::string groupname
     retvec.segment(chunkstart,tchunksize)=temp.colwise().mean()/2;
     if(check_dup){
       for(int c=chunkstart;c<(chunkstart+tchunksize);c++){
-        ti = temp.col(c-chunkstart).cast<char>();
+        ti = round(temp.col(c-chunkstart).array()).cast<char>();
         tti=my_map[ti]++;
         if(tti!=0){
           retvec(c)=0;
@@ -97,6 +97,83 @@ Rcpp::NumericVector calc_af(const std::string h5file,const std::string groupname
   }
   return(Rcpp::wrap(retvec));
 }
+
+
+//[[Rcpp::export]]
+Rcpp::DataFrame calc_summ_h5(const std::string h5file,const std::string groupname, const std::string dataname, const Eigen::ArrayXi index, const Rcpp::IntegerVector chunksize,bool display_progress=true,bool check_dup=true){
+  using namespace Eigen;
+  using namespace Rcpp;
+  size_t p=index.size();
+  Eigen::ArrayXd retvec(p);
+  size_t csize= chunksize[0];
+  size_t totchunks=ceil((double) p / (double) csize);
+  Eigen::ArrayXi subi;
+  Rcpp::IntegerVector rindex(Rcpp::wrap(index));
+  size_t rownum =get_rownum_h5(h5file,groupname,dataname);
+
+  Eigen::ArrayXd dat_min(p);
+  Eigen::ArrayXd dat_max(p);
+  Eigen::ArrayXd dat_af(p);
+  Rcpp::LogicalVector dat_isdup(p);
+
+
+  Eigen::MatrixXd temp(rownum,csize);
+  // Eigen::Matrix<char,Dynamic,Dynamic> tempi(rownum,csize);
+
+  // Rcpp::Rcout<<"totchunks: "<<totchunks<<std::endl;
+  // std::vector<bool> isDup(p);
+  std::unordered_map<ColumnMatrixi,int,matrix_hash<ColumnMatrixi> > my_map;
+  // if(check_dup){
+  // my_map.reserve(p);
+  // }
+  // std::unordered_map<Array<char,Dynamic,1>,int >::iterator my_map_it;
+
+  ColumnMatrixi ti=temp.col(0).cast<char>();
+  int tti=0;
+  Progress pp(totchunks, display_progress);
+  for(size_t i=0; i<totchunks;i++){
+    size_t chunkstart =i*csize;
+    size_t chunkstop =std::min((p-1),((i+1)*csize)-1);
+    if (Progress::check_abort() )
+      return Rcpp::wrap(retvec);
+
+
+    size_t tchunksize= chunkstop-chunkstart+1;
+    // Rcpp::Rcout<<"Chunk: "<<i<<"of size: "<<tchunksize<<std::endl;
+    // Rcpp::Rcout<<index.segment(chunkstart,tchunksize)<<std::endl;
+
+    read_2d_cindex_h5(h5file,groupname,dataname,index.segment(chunkstart,tchunksize),temp);
+    // tempi =temp.cast<char>();
+    dat_af.segment(chunkstart,tchunksize)=temp.colwise().mean()/2;
+    dat_min.segment(chunkstart,tchunksize)=temp.colwise().minCoeff();
+    dat_max.segment(chunkstart,tchunksize)=temp.colwise().maxCoeff();
+
+
+    if(check_dup){
+      for(int c=chunkstart;c<(chunkstart+tchunksize);c++){
+        ti = temp.col(c-chunkstart).cast<char>();
+        tti=my_map[ti]++;
+        dat_isdup(c)=(tti!=0);
+
+        // if(tti!=0){
+        //
+        //   retvec(c)=0;
+        // }
+      }
+    }
+    pp.increment();
+  }
+  return(Rcpp::DataFrame::create(_["af"]=Rcpp::wrap(dat_af),
+                                 _["min"]=Rcpp::wrap(dat_min),
+                                 _["max"]=Rcpp::wrap(dat_max),
+                                 _["isDup"]=dat_isdup,
+                                 _["index"]=rindex));
+
+}
+
+
+
+
 
 
 Eigen::ArrayXd calc_variance(c_Matrix_internal mat){
