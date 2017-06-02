@@ -503,6 +503,63 @@ Eigen::ArrayXi read_ivec_h5(const std::string h5file, const std::string groupnam
 }
 
 
+Eigen::ArrayXi read_uivec_h5(const std::string h5file, const std::string groupname, const std::string dataname){
+
+  H5FilePtr file=open_file(h5file);
+  H5GroupPtr group= open_group(file,groupname);
+  H5DataSetPtr dataset = open_dataset(group,dataname);
+  DSetCreatPropList cparms= dataset->getCreatePlist();
+
+
+  DataType dt= dataset->getDataType();
+  hsize_t datadims[]={0};
+  DataSpace fspace=dataset->getSpace();
+  fspace.getSimpleExtentDims(datadims,NULL);
+  //  std::cout<<"Full data is of dimensions"<<datadims[0]<<"x"<<datadims[1]<<std::endl;
+  hsize_t vec_dims[1];
+  int offset=0;
+  int chunksize=datadims[0];
+  std::vector<unsigned int> tai(chunksize);
+  Eigen::ArrayXi arrayxi(chunksize);
+  arrayxi.setZero();
+
+
+  if(offset+chunksize>datadims[0]){
+    Rcpp::stop("offset+chunksize>datadims[0]!");
+  }
+  vec_dims[0]=chunksize;
+  datadims[0]=chunksize;
+
+  // std::cout<<"Full data is of size "<<datadim[0]<<std::endl;
+  hsize_t offseta[1];
+  offseta[0]=offset;
+  fspace.selectHyperslab(H5S_SELECT_SET,datadims,offseta);
+  //  std::cout<<"Allocating matrix of size:"<<matrix_dims[0]<<"x"<<matrix_dims[1]<<std::endl;
+  //  std::cout<<"Matrix starts at"<<row_offset<<"x"<<col_offset<<std::endl;
+  DataSpace memspace(1,vec_dims);
+  //  std::cout<<"Reading data"<<std::endl;
+  try{
+    dataset->read(&tai[0],dt,memspace,fspace);
+  }catch(DataSetIException error){
+    error.printError();
+    Rcpp::stop("Error reading column!");
+  }
+
+
+
+  dt.close();
+  memspace.close();
+  fspace.close();
+  group->close();
+  dataset->close();
+  file->close();
+  for(size_t i=0;i<tai.size();i++){
+    arrayxi[i]=(int)tai[i];
+  }
+  return(arrayxi);
+}
+
+
 
 
 

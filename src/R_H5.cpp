@@ -78,6 +78,16 @@ Eigen::ArrayXi read_ivec_exp(const StringVector h5file, const StringVector group
 }
 
 
+//[[Rcpp::export(name="read_uivec")]]
+Eigen::ArrayXi read_uivec_exp(const StringVector h5file, const StringVector groupname, const StringVector dataname){
+
+  std::string th5file(h5file[0]);
+  std::string tgroupname(groupname[0]);
+  std::string tdataname(dataname[0]);
+  return(read_uivec_h5(th5file,tgroupname,tdataname));
+}
+
+
 
 //[[Rcpp::export]]
 Eigen::ArrayXi read_1i_h5(const StringVector h5file, const StringVector groupname, const StringVector dataname,const  IntegerVector offset ,const  IntegerVector chunksize){

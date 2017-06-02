@@ -105,6 +105,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// read_uivec_exp
+Eigen::ArrayXi read_uivec_exp(const StringVector h5file, const StringVector groupname, const StringVector dataname);
+RcppExport SEXP RcppEigenH5_read_uivec_exp(SEXP h5fileSEXP, SEXP groupnameSEXP, SEXP datanameSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const StringVector >::type h5file(h5fileSEXP);
+    Rcpp::traits::input_parameter< const StringVector >::type groupname(groupnameSEXP);
+    Rcpp::traits::input_parameter< const StringVector >::type dataname(datanameSEXP);
+    rcpp_result_gen = Rcpp::wrap(read_uivec_exp(h5file, groupname, dataname));
+    return rcpp_result_gen;
+END_RCPP
+}
 // read_1i_h5
 Eigen::ArrayXi read_1i_h5(const StringVector h5file, const StringVector groupname, const StringVector dataname, const IntegerVector offset, const IntegerVector chunksize);
 RcppExport SEXP RcppEigenH5_read_1i_h5(SEXP h5fileSEXP, SEXP groupnameSEXP, SEXP datanameSEXP, SEXP offsetSEXP, SEXP chunksizeSEXP) {

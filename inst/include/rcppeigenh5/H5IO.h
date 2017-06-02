@@ -61,6 +61,8 @@ void read_ivec_h5(const std::string h5file, const std::string groupname, const s
 Eigen::ArrayXi read_ivec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const int offset,const int chunksize);
 Eigen::ArrayXi read_ivec_h5(const std::string h5file, const std::string groupname, const std::string dataname);
 
+Eigen::ArrayXi read_uivec_h5(const std::string h5file, const std::string groupname, const std::string dataname);
+
 
 void read_2d_cindex_h5(const std::string h5file,const std::string groupname, const std::string dataname, const c_arrayxi_internal indvec, Matrix_internal retmat);
 void read_2d_cindex_chunk_h5(const std::string h5file,const std::string groupname, const std::string dataname, const c_arrayxi_internal indvec, Matrix_internal retmat,const size_t chunksize=10000);

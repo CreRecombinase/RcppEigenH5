@@ -29,6 +29,10 @@ read_ivec <- function(h5file, groupname, dataname) {
     .Call('RcppEigenH5_read_ivec_exp', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname)
 }
 
+read_uivec <- function(h5file, groupname, dataname) {
+    .Call('RcppEigenH5_read_uivec_exp', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname)
+}
+
 read_1i_h5 <- function(h5file, groupname, dataname, offset, chunksize) {
     .Call('RcppEigenH5_read_1i_h5', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, offset, chunksize)
 }
