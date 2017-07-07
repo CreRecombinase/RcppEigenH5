@@ -149,3 +149,19 @@ write_ivec_h5 <- function(h5file, groupname, dataname, data, deflate_level = as.
     invisible(.Call('RcppEigenH5_write_ivec_h5_exp', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, data, deflate_level))
 }
 
+file_rownum <- function(filename) {
+    .Call('RcppEigenH5_file_rownum', PACKAGE = 'RcppEigenH5', filename)
+}
+
+file_colnum <- function(filename) {
+    .Call('RcppEigenH5_file_colnum', PACKAGE = 'RcppEigenH5', filename)
+}
+
+read_haps <- function(filename, rownum = 0L, colnum = 0L) {
+    .Call('RcppEigenH5_read_haps_exp', PACKAGE = 'RcppEigenH5', filename, rownum, colnum)
+}
+
+write_haps_h5 <- function(filename, h5file, groupname, dataname, deflate_level, rownum = 0L, colnum = 0L) {
+    invisible(.Call('RcppEigenH5_write_haps_h5', PACKAGE = 'RcppEigenH5', filename, h5file, groupname, dataname, deflate_level, rownum, colnum))
+}
+

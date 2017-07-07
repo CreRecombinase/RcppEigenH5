@@ -123,6 +123,87 @@ void write_mat_chunk_h5(const std::string h5file, const std::string groupname, c
 
 
 
+void write_dmat_h5(hnames h5s,const double* data,const int deflate_level,const matdim matdims){
+  FloatType ftypew(PredType::NATIVE_DOUBLE);
+  std::string h5file,groupname,dataname;
+
+  size_t rowsize,colsize;
+  std::tie(rowsize,colsize)=matdims;
+  std::tie(h5file,groupname,dataname)=h5s;
+
+  H5FilePtr file =create_or_open_file(h5file);
+
+
+  size_t rchunksize=rowsize;
+  size_t cchunksize=1000;
+  if(cchunksize>colsize){
+    cchunksize=colsize;
+  }
+
+  H5GroupPtr group =create_or_open_group(file,groupname);
+  std::vector<hsize_t> cumdim{rowsize,colsize};
+  std::vector<hsize_t> maxdim{rowsize,colsize};
+  std::vector<hsize_t> chunkdim{rchunksize,cchunksize};
+
+  H5DataSetPtr dataset =create_or_open_dataset(group,dataname,ftypew,cumdim,maxdim,chunkdim,deflate_level);
+  write_transpose(dataset,false);
+  DataSpace* fdataspace;
+  try{
+    fdataspace= new DataSpace(dataset->getSpace());
+  }catch(DataSpaceIException error){
+    error.printError();
+    Rcpp::stop("Error creating memory dataspace ");
+  }
+
+  hsize_t datadim[2];
+  fdataspace->getSimpleExtentDims(datadim,NULL);
+
+  hsize_t memdim[]={rowsize,colsize};
+
+  DataSpace *mspace;
+  try{
+    mspace= new DataSpace(2,memdim); //Size of first dataset (in memory, can be bigger or smaller than size on disk, depending on how much you're writing)
+  }catch(DataSpaceIException error){
+    error.printError();
+    Rcpp::stop("Error creating memory dataspace ");
+  }
+  hsize_t odim[]={0,0};//dimension of each offset (current_chunk*chunksize)
+  hsize_t stridea[]={1,1};
+  hsize_t blocka[]={1,1};
+
+
+  fdataspace->selectHyperslab( H5S_SELECT_SET, memdim,odim,stridea,blocka);
+
+
+  //  std::cout<<"Starting to write data"<<std::endl;
+  try{
+    dataset->write(data,PredType::NATIVE_DOUBLE,*mspace,*fdataspace);
+  }  catch( DataSetIException error )
+  {
+    error.printError();
+    Rcpp::stop("Error writing file");
+  }
+  //  std::cout<<"Data sucessfully written"<<std::endl;
+  try{
+    file->flush(H5F_SCOPE_GLOBAL);
+  }catch(FileIException error)
+  {
+    error.printError();
+    Rcpp::stop("Error flushing file");
+  }
+  //  std::cout<<"File flushed"<<std::endl;
+  dataset->close();
+  fdataspace->close();
+  mspace->close();
+  group->close();
+  file->close();
+  fdataspace->close();
+  mspace->close();
+
+
+}
+
+
 void write_mat_h5(const std::string h5file, const std::string groupname, const std::string dataname, Matrix_internal data, const int deflate_level){
 
   size_t rowsize=data.rows();

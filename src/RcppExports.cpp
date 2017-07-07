@@ -524,3 +524,54 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// file_rownum
+int file_rownum(const std::string filename);
+RcppExport SEXP RcppEigenH5_file_rownum(SEXP filenameSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string >::type filename(filenameSEXP);
+    rcpp_result_gen = Rcpp::wrap(file_rownum(filename));
+    return rcpp_result_gen;
+END_RCPP
+}
+// file_colnum
+int file_colnum(const std::string filename);
+RcppExport SEXP RcppEigenH5_file_colnum(SEXP filenameSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string >::type filename(filenameSEXP);
+    rcpp_result_gen = Rcpp::wrap(file_colnum(filename));
+    return rcpp_result_gen;
+END_RCPP
+}
+// read_haps_exp
+Rcpp::IntegerMatrix read_haps_exp(const std::string filename, int rownum, int colnum);
+RcppExport SEXP RcppEigenH5_read_haps_exp(SEXP filenameSEXP, SEXP rownumSEXP, SEXP colnumSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string >::type filename(filenameSEXP);
+    Rcpp::traits::input_parameter< int >::type rownum(rownumSEXP);
+    Rcpp::traits::input_parameter< int >::type colnum(colnumSEXP);
+    rcpp_result_gen = Rcpp::wrap(read_haps_exp(filename, rownum, colnum));
+    return rcpp_result_gen;
+END_RCPP
+}
+// write_haps_h5
+void write_haps_h5(const std::string filename, const std::string h5file, const std::string groupname, const std::string dataname, const int deflate_level, int rownum, int colnum);
+RcppExport SEXP RcppEigenH5_write_haps_h5(SEXP filenameSEXP, SEXP h5fileSEXP, SEXP groupnameSEXP, SEXP datanameSEXP, SEXP deflate_levelSEXP, SEXP rownumSEXP, SEXP colnumSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string >::type filename(filenameSEXP);
+    Rcpp::traits::input_parameter< const std::string >::type h5file(h5fileSEXP);
+    Rcpp::traits::input_parameter< const std::string >::type groupname(groupnameSEXP);
+    Rcpp::traits::input_parameter< const std::string >::type dataname(datanameSEXP);
+    Rcpp::traits::input_parameter< const int >::type deflate_level(deflate_levelSEXP);
+    Rcpp::traits::input_parameter< int >::type rownum(rownumSEXP);
+    Rcpp::traits::input_parameter< int >::type colnum(colnumSEXP);
+    write_haps_h5(filename, h5file, groupname, dataname, deflate_level, rownum, colnum);
+    return R_NilValue;
+END_RCPP
+}

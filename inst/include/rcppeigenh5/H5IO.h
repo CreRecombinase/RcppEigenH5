@@ -9,8 +9,10 @@ using namespace Eigen;
 // typedef std::ptrdiff_t Index;
 //
 //
- typedef Eigen::Ref<Eigen::MatrixXd > Matrix_internal;
-//
+typedef Eigen::Ref<Eigen::MatrixXd > Matrix_internal;
+
+
+ //
 // template<class ArgType, class RowIndexType, class ColIndexType>
 // class indexing_functor {
 //   const ArgType &m_arg;
@@ -51,6 +53,7 @@ Eigen::MatrixXd read_2d_h5(const std::string h5file, const std::string groupname
 Eigen::MatrixXd read_2d_h5(const std::string h5file, const std::string groupname, const std::string dataname);
 
 void read_dvec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const int offset,const int chunksize, double* data);
+void read_dfvec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const int offset,const int chunksize, float* data);
 Eigen::ArrayXd read_dvec_h5(const std::string h5file, const std::string groupname, const std::string dataname,const int offset,const int chunksize);
 Eigen::ArrayXd read_dvec_h5(const std::string h5file, const std::string groupname, const std::string dataname);
 
@@ -63,8 +66,9 @@ Eigen::ArrayXi read_ivec_h5(const std::string h5file, const std::string groupnam
 
 Eigen::ArrayXi read_uivec_h5(const std::string h5file, const std::string groupname, const std::string dataname);
 
-
+Eigen::ArrayXf read_1df_cindex_h5(const std::string h5file,const std::string groupname, const std::string dataname, const  c_arrayxi_internal indvec);
 void read_2d_cindex_h5(const std::string h5file,const std::string groupname, const std::string dataname, const c_arrayxi_internal indvec, Matrix_internal retmat);
+void read_2df_cindex_h5(const std::string h5file,const std::string groupname, const std::string dataname, const c_arrayxi_internal indvec, Matrix_finternal retmat);
 void read_2d_cindex_chunk_h5(const std::string h5file,const std::string groupname, const std::string dataname, const c_arrayxi_internal indvec, Matrix_internal retmat,const size_t chunksize=10000);
 Eigen::ArrayXd read_1d_cindex_h5(const std::string h5file,const std::string groupname, const std::string dataname, const c_arrayxi_internal indvec);
 #endif

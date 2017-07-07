@@ -27,6 +27,8 @@ typedef Eigen::MappedSparseMatrix<double> c_sparseMatrix_internal;
 
 typedef Eigen::Ref<const Eigen::MatrixXd > c_Matrix_internal;
 typedef Eigen::Ref<Eigen::MatrixXd > Matrix_internal;
+typedef Eigen::Ref<Eigen::MatrixXf > Matrix_finternal;
+
 typedef Eigen::Ref<Eigen::ArrayXd> arrayxd_internal;
 typedef Eigen::Ref<Eigen::ArrayXi> arrayxi_internal;
 
@@ -39,6 +41,16 @@ typedef Eigen::Map<Eigen::ArrayXi> arrayxi_external;
 typedef Eigen::MappedSparseMatrix<double> sparseMatrix_external;
 typedef Eigen::Map<Eigen::MatrixXd > Matrix_external;
 typedef Eigen::Map<Eigen::VectorXd> vectorxd_external;
+
+typedef Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> rowmat;
+typedef Eigen::Matrix<float,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> rowfmat;
+typedef Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::ColMajor> colmat;
+
+typedef Eigen::Map<rowmat> mrowmat;
+typedef Eigen::Map<colmat> mmat;
+
+typedef std::tuple<std::string, std::string,std::string> hnames;
+typedef std::pair<size_t,size_t> matdim;
 
 
 

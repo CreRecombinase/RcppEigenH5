@@ -74,5 +74,158 @@ std::vector<std::string> getGroups(const std::string h5file){
   return(retvec);
 }
 
+using namespace H5;
+
+enum DTYPE { T_DOUBLE, T_INTEGER, T_LOGICAL, T_CHARACTER, T_VLEN_FLOAT,
+             T_VLEN_DOUBLE, T_VLEN_INTEGER, T_VLEN_LOGICAL, T_COMPOUND, T_DATETIME, T_ENUM};
+
+#define CPTR(VAR,CONST) ((VAR)=(CONST),&(VAR))
+
+DataType GetDataType(const DTYPE datatype, int size = -1) {
+  switch(datatype){
+  case T_DOUBLE: return PredType::NATIVE_DOUBLE;
+  case T_INTEGER: return PredType::NATIVE_INT32;
+  case T_LOGICAL: {
+    int val;
+    EnumType boolenumtype = EnumType(sizeof(char));
+    boolenumtype.insert("FALSE", CPTR(val, FALSE));
+    boolenumtype.insert("TRUE", CPTR(val, TRUE));
+    boolenumtype.insert("NA", CPTR(val, -1));
+    return boolenumtype;
+  }
+  case T_CHARACTER: {
+    if ( (size_t)size == H5T_VARIABLE ) { // Assume Variable string size
+    StrType datatype(0, H5T_VARIABLE);
+    return datatype;
+  } else {
+    PredType datatype = PredType::C_S1;
+    datatype.setSize(size);
+    return datatype;
+  }
+  }
+  case T_VLEN_FLOAT: {
+    DataType type = PredType::NATIVE_DOUBLE;
+    return VarLenType(&type);
+  }
+  case T_VLEN_DOUBLE: {
+    DataType type = PredType::NATIVE_DOUBLE;
+    return VarLenType(&type);
+  }
+  case T_VLEN_INTEGER: {
+    DataType type = PredType::NATIVE_INT32;
+    return VarLenType(&type);
+  }
+  case T_VLEN_LOGICAL: {
+    DataType type = GetDataType(T_VLEN_LOGICAL);
+    return VarLenType(&type);
+  }
+  case T_COMPOUND:
+    throw Rcpp::exception("Writing of compound datatypes is not yet supported.");
+  case T_DATETIME:
+    throw Rcpp::exception("Writing of date/time datatypes is not yet supported.");
+  case T_ENUM:
+    throw Rcpp::exception("Writing of enum datatypes is not yet supported.");
+  default: throw Rcpp::exception("Unknown data type.");
+  }
+}
+
+struct cmpDataType {
+  bool operator()(const hid_t& a, const hid_t& b) const {
+    return H5Tequal(a, b);
+  }
+};
+
+DTYPE GetTypechar(const DataType &dtype) {
+  if ( (dtype == PredType::NATIVE_FLOAT) ||
+       (dtype == PredType::NATIVE_DOUBLE) ||
+       (dtype == PredType::NATIVE_INT64) ||
+       (dtype == PredType::NATIVE_UINT32) ||
+       (dtype == PredType::NATIVE_UINT64) ||
+       (dtype == PredType::IEEE_F32BE) ||
+       (dtype == PredType::IEEE_F32LE) ||
+       (dtype == PredType::IEEE_F64BE) ||
+       (dtype == PredType::IEEE_F64LE)
+  ) {
+    return T_DOUBLE;
+  }
+
+  if( (dtype == PredType::NATIVE_INT) ||
+      (dtype == PredType::NATIVE_INT8) ||
+      (dtype == PredType::NATIVE_INT16) ||
+      (dtype == PredType::NATIVE_INT32) ||
+      (dtype == PredType::NATIVE_UINT8) ||
+      (dtype == PredType::NATIVE_UINT16) ||
+      (dtype == PredType::STD_U8BE) ||
+      (dtype == PredType::STD_U8LE)) {
+    return T_INTEGER;
+  }
+  if (dtype == PredType::C_S1 || dtype.getClass() == H5T_STRING) {
+    return T_CHARACTER;
+  }
+  if (dtype == GetDataType(T_LOGICAL)) {
+    return T_LOGICAL;
+  }
+  if ( (dtype == VarLenType(&PredType::NATIVE_FLOAT)) ||
+       (dtype == VarLenType(&PredType::NATIVE_DOUBLE)) ||
+       (dtype == VarLenType(&PredType::NATIVE_INT64)) ||
+       (dtype == VarLenType(&PredType::NATIVE_UINT32)) ||
+       (dtype == VarLenType(&PredType::NATIVE_UINT64))) {
+    return T_VLEN_DOUBLE;
+  }
+  if ( (dtype == VarLenType(&PredType::NATIVE_INT)) ||
+       (dtype == VarLenType(&PredType::NATIVE_INT8)) ||
+       (dtype == VarLenType(&PredType::NATIVE_INT16)) ||
+       (dtype == VarLenType(&PredType::NATIVE_INT32)) ||
+       (dtype == VarLenType(&PredType::NATIVE_UINT8)) ||
+       (dtype == VarLenType(&PredType::NATIVE_UINT16)) ) {
+    return T_VLEN_INTEGER;
+  }
+  if (dtype.getClass() == H5T_COMPOUND) {
+    return T_COMPOUND;
+  } else if (dtype.getClass() == H5T_TIME) {
+    return T_DATETIME;
+  } else if (dtype.getClass() == H5T_ENUM) {
+    return T_ENUM;
+  }
+
+  /*
+   if (dtype == GetDataType(T_VLEN_LOGICAL)) {
+   return T_VLEN_LOGICAL;
+   } */
+
+  throw Rcpp::exception("Datatype unknown.");
+}
+
+DTYPE GetTypechar(char typechar) {
+  switch(typechar) {
+  case 'd': return T_DOUBLE;
+  case 'i': return T_INTEGER;
+  case 'l': return T_LOGICAL;
+  case 'c': return T_CHARACTER;
+  case 'x': return T_VLEN_DOUBLE;
+  case 'y': return T_VLEN_INTEGER;
+  case 'z': return T_VLEN_LOGICAL;
+  case 't': return T_COMPOUND;
+  case 'm': return T_DATETIME;
+  case 'f': return T_ENUM;
+  default: throw new Exception("Typechar unknown");
+  }
+}
+
+char GetTypechar(DTYPE typechar) {
+  switch(typechar) {
+  case T_DOUBLE: return 'd';
+  case T_INTEGER: return 'i';
+  case T_LOGICAL: return 'l';
+  case T_CHARACTER: return 'c';
+  case T_VLEN_DOUBLE: return 'x';
+  case T_VLEN_INTEGER: return 'y';
+  case T_VLEN_LOGICAL: return 'z';
+  case T_COMPOUND: return 't';
+  case T_DATETIME: return 'm';
+  case T_ENUM: return 'f';
+  default: throw new Exception("Typechar unknown");
+  }
+}
 
 
