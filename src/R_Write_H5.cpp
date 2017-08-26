@@ -1,5 +1,7 @@
 #include "RcppEigenH5.h"
 
+// [[Rcpp::depends(RcppProgress)]]
+#include <progress.hpp>
 
 //[[Rcpp::depends(RcppEigen)]]
 using namespace Eigen;
@@ -15,6 +17,203 @@ void write_mat_chunk_h5_exp(const StringVector h5file, const StringVector groupn
 }
 
 
+//[[Rcpp::export]]
+void concat_rows_split_cols_h5(const StringVector in_h5files,
+                               const StringVector in_groupname,
+                               const StringVector in_datanames,
+                               const StringVector out_h5file,
+                               const StringVector out_groupnames){
+
+
+  const std::vector<std::string> i_datanames=Rcpp::as<std::vector<std::string>>(in_datanames);
+  const size_t num_data=i_datanames.size();
+
+  const size_t n_in_files=in_h5files.size();
+  size_t tot_rows=0;
+  const std::string o_filename(out_h5file[0]);
+  const std::string i_groupname(in_groupname[0]);
+  //  std::string i_dataname(in_dataname[0]);
+  const std::vector<std::string> o_groupnames=Rcpp::as<std::vector<std::string>>(out_groupnames);
+  const std::vector<std::string> o_datanames=i_datanames;
+  std::vector<size_t> tot_cols_v(n_in_files);
+  std::vector<size_t> tot_rows_v(n_in_files);
+
+  size_t max_rows=0;
+  for(size_t i=0;i<n_in_files;i++){
+    size_t temp_rows=get_rownum_h5(std::string(in_h5files[i]),i_groupname,i_datanames[0]);
+    tot_cols_v[i]= get_colnum_h5(std::string(in_h5files[i]),i_groupname,i_datanames[0]);
+    for(size_t j=0; j<num_data;j++){
+      if((get_rownum_h5(std::string(in_h5files[i]),i_groupname,i_datanames[j])!=temp_rows)||
+         (get_colnum_h5(std::string(in_h5files[i]),i_groupname,i_datanames[j])!=tot_cols_v[i])){
+        Rcpp::stop("all data must have the same dimensions");
+      }
+    }
+
+    tot_rows+=temp_rows;
+    tot_rows_v[i]=temp_rows;
+    if(temp_rows>max_rows){
+      max_rows=temp_rows;
+    }
+
+    if(i>0){
+      if(tot_cols_v[i-1]!=tot_cols_v[i]){
+        Rcpp::stop("All files must have equal number of columns");
+      }
+    }
+  }
+  std::vector<size_t> row_offset(n_in_files);
+  row_offset[0]=0;
+  std::partial_sum(tot_rows_v.begin(),tot_rows_v.end()-1,row_offset.begin()+1);
+
+
+  size_t tot_cols=tot_cols_v[0];
+  if(tot_cols!=out_groupnames.size()){
+    Rcpp::stop("Groupnames not the same size as number of columns!");
+  }
+//  Progress p(tot_cols, false);
+  std::vector<double> dbuffer(max_rows*tot_cols);
+  std::vector<double> tbuffer(max_rows);
+
+
+
+//  std::vector<size_t> chunk_dims={tot_rows/2,1};
+  FloatType ftypew(PredType::NATIVE_DOUBLE);
+
+  std::vector<hsize_t> cumdim{tot_rows};
+  std::vector<hsize_t> maxdim{tot_rows};
+  std::vector<hsize_t> chunkdim{tot_rows/2};
+
+
+  H5FilePtr file_o =create_or_open_file(o_filename);
+//  Rcpp::Rcout<<"Creating Groups";
+  for(size_t i=0; i<tot_cols;i++){
+    std::string gname(out_groupnames[i]);
+    H5GroupPtr group =create_or_open_group(file_o,gname);
+    for(size_t j=0; j<num_data;j++){
+      H5DataSetPtr dataset =create_or_open_dataset(group,o_datanames[j],ftypew,cumdim,maxdim,chunkdim,1);
+      write_transpose(dataset,false);
+      dataset->close();
+    }
+    group->close();
+  }
+  file_o->flush(H5F_SCOPE_GLOBAL);
+  //  file_o->close();
+
+  Progress pp(n_in_files, true);
+  // file_o =create_or_open_file(std::string(out_h5file[0]));
+  DataSpace* ofdataspace;
+  for(size_t i=0; i<n_in_files;i++){
+
+//The  layout (abstractly) is snps as rows, genes as columns.  The data is "transposed" though (also stored with a row-major storage order),
+//so that means the number of genes is the first dimension (on disk)
+    const size_t num_snps=tot_rows_v[i];
+    const size_t num_genes=tot_cols;
+    dbuffer.resize(num_snps*num_genes);
+    H5FilePtr file_i =open_file(std::string(in_h5files[i]));
+    H5GroupPtr group_i = open_group(file_i,i_groupname);
+    const hsize_t matrix_dims[]={num_genes,num_snps};
+    const hsize_t offseta[]={0,0};
+    for(size_t k=0;k<num_data;k++){
+      H5DataSetPtr dataset_i = open_dataset(group_i,i_datanames[k]);
+      bool isTranspose=check_transpose(dataset_i);
+      if(!isTranspose){
+        Rcpp::stop("Not transposed data interface hasn't been implemented yet(sorry)");
+      }
+
+      DataType dt= dataset_i->getDataType();
+      hsize_t datadims[]={0,0};
+      DataSpace fspace=dataset_i->getSpace();
+      fspace.getSimpleExtentDims(datadims,NULL);
+      //  std::cout<<"Full data is of dimensions"<<datadims[0]<<"x"<<datadims[1]<<std::endl;
+
+      if(num_genes>datadims[0]){
+        Rcpp::stop("You can't read beyond extent in first dimension (rows)");
+      }
+      if(num_snps>datadims[1]){
+        Rcpp::stop("You can't read beyond extent in the second dimension (cols)");
+      }
+      //Dimensions in memory (storing data in row major order for now (because why not)
+
+
+      fspace.selectHyperslab(H5S_SELECT_SET,datadims,offseta);
+
+      DataSpace memspace(2,matrix_dims);
+      dataset_i->read(dbuffer.data(),dt,memspace,fspace);
+
+      Eigen::Map<Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> > datmap(dbuffer.data(),num_genes,num_snps);
+
+      for(size_t j=0; j<tot_cols;j++){
+        //Remember that data is transposed
+        const std::string gname(out_groupnames[j]);
+
+        const double *trow=&datmap.coeffRef(j,0);
+
+
+        //        Rcpp::Rcout<<std::endl<<"Here's a peek at tcol(length is "<<num_snps<<"):"<<std::endl<<Eigen::Map<Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor>>(trow,1,num_snps)<<std::endl;
+        H5GroupPtr group_o = open_group(file_o,gname);
+        H5DataSetPtr dataset_o = open_dataset(group_o,o_datanames[k]);
+
+        try{
+          ofdataspace= new DataSpace(dataset_o->getSpace());
+        }catch(DataSpaceIException error){
+          error.printError();
+          Rcpp::stop("Error creating memory dataspace ");
+        }
+        hsize_t datadim[2];
+        ofdataspace->getSimpleExtentDims(datadim,NULL);
+        const hsize_t memdim[]={num_snps};
+        DataSpace *mspace;
+        try{
+          mspace= new DataSpace(1,memdim); //Size of first dataset (in memory, can be bigger or smaller than size on disk, depending on how much you're writing)
+        }catch(DataSpaceIException error){
+          error.printError();
+          Rcpp::stop("Error creating memory dataspace ");
+        }
+        hsize_t row_offset_i=row_offset[i];
+
+        if(row_offset_i+num_snps>datadim[0]){
+          Rcpp::stop("Trying to write off the end of the file!");
+        }
+        //        Rcpp::Rcerr<<"row_offset is :"<<row_offset_i<<std::endl;
+        const hsize_t odim[]={row_offset_i};//dimension of each offset (current_chunk*chunksize)
+        //      Rcpp::Rcerr<<"odim is :"<<odim[0]<<"x"<<odim[1]<<std::endl;
+
+        ofdataspace->selectHyperslab( H5S_SELECT_SET,memdim,odim);
+        try{
+          dataset_o->write(trow,ftypew,*mspace,*ofdataspace);
+        }  catch( DataSetIException error )
+        {
+          error.printError();
+          Rcpp::stop("Error writing file");
+        }
+        file_o->flush(H5F_SCOPE_GLOBAL);
+
+        //  std::cout<<"File flushed"<<std::endl;
+        dataset_o->close();
+        ofdataspace->close();
+        mspace->close();
+        delete mspace;
+        group_o->close();
+        delete ofdataspace;
+      }
+      pp.increment();
+      dataset_i->close();
+      dt.close();
+      memspace.close();
+      fspace.close();
+    }
+    group_i->close();
+    file_i->close();
+
+  }
+  file_o->flush(H5F_SCOPE_GLOBAL);
+  file_o->close();
+
+
+
+
+}
+
 
 
 
@@ -22,7 +221,17 @@ void write_mat_chunk_h5_exp(const StringVector h5file, const StringVector groupn
 void create_mat_dataset_h5_exp(const StringVector h5file, const StringVector groupname, const StringVector dataname,const IntegerVector dims, const IntegerVector chunkdims, const IntegerVector deflate_level=IntegerVector::create(0),const bool doTranspose=false){
 
   std::string filename(h5file[0]);
-  std::string gname(groupname[0]);
+
+  size_t groupnum=groupname.size();
+  std::vector<std::string> groupnames(groupnum);
+  for(size_t i=0;i<groupnum;i++){
+    groupnames[i]=groupname[i];
+  }
+
+
+
+
+//  std::string gname(groupname[0]);
   std::string dname(dataname[0]);
 
 
@@ -44,18 +253,20 @@ void create_mat_dataset_h5_exp(const StringVector h5file, const StringVector gro
 
   }
   H5FilePtr file =create_or_open_file(filename);
-
-  H5GroupPtr group =create_or_open_group(file,gname);
   FloatType ftypew(PredType::NATIVE_DOUBLE);
 
   std::vector<hsize_t> cumdim{rownum,colnum};
   std::vector<hsize_t> maxdim{rownum,colnum};
   std::vector<hsize_t> chunkdim{rowchunk,colchunk};
+  for(size_t i=0; i<groupnum;i++){
+    std::string gname=groupnames[i];
+    H5GroupPtr group =create_or_open_group(file,gname);
 
-  H5DataSetPtr dataset =create_or_open_dataset(group,dname,ftypew,cumdim,maxdim,chunkdim,d_level);
-  write_transpose(dataset,doTranspose);
-  dataset->close();
-  group->close();
+    H5DataSetPtr dataset =create_or_open_dataset(group,dname,ftypew,cumdim,maxdim,chunkdim,d_level);
+    write_transpose(dataset,doTranspose);
+    dataset->close();
+    group->close();
+  }
   file->close();
 
 }

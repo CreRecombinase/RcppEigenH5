@@ -491,10 +491,13 @@ Eigen::ArrayXi read_ivec_h5(const std::string h5file, const std::string groupnam
   DSetCreatPropList cparms= dataset->getCreatePlist();
 
 
-  DataType dt= dataset->getDataType();
-  hsize_t datadims[]={0};
+  DataType dt= PredType::NATIVE_INT;
+  std::vector<hsize_t> datadims;
   DataSpace fspace=dataset->getSpace();
-  fspace.getSimpleExtentDims(datadims,NULL);
+  hsize_t nd = fspace.getSimpleExtentNdims();
+  datadims.resize(nd);
+  fspace.getSimpleExtentDims(datadims.data(),NULL);
+
   //  std::cout<<"Full data is of dimensions"<<datadims[0]<<"x"<<datadims[1]<<std::endl;
   hsize_t vec_dims[1];
   if(offset+chunksize>datadims[0]){
@@ -507,7 +510,7 @@ Eigen::ArrayXi read_ivec_h5(const std::string h5file, const std::string groupnam
   hsize_t offseta[1];
   offseta[0]=offset;
   Eigen::ArrayXi dataxi(chunksize);
-  fspace.selectHyperslab(H5S_SELECT_SET,datadims,offseta);
+  fspace.selectHyperslab(H5S_SELECT_SET,datadims.data(),offseta);
   //  std::cout<<"Allocating matrix of size:"<<matrix_dims[0]<<"x"<<matrix_dims[1]<<std::endl;
   //  std::cout<<"Matrix starts at"<<row_offset<<"x"<<col_offset<<std::endl;
   DataSpace memspace(1,vec_dims);
@@ -539,7 +542,7 @@ void read_ivec_h5(const std::string h5file, const std::string groupname, const s
   DSetCreatPropList cparms= dataset->getCreatePlist();
 
 
-  DataType dt= dataset->getDataType();
+  DataType dt= PredType::NATIVE_INT;
   hsize_t datadims[]={0};
   DataSpace fspace=dataset->getSpace();
   fspace.getSimpleExtentDims(datadims,NULL);
@@ -579,31 +582,40 @@ Eigen::ArrayXi read_ivec_h5(const std::string h5file, const std::string groupnam
   DSetCreatPropList cparms= dataset->getCreatePlist();
 
 
-  DataType dt= dataset->getDataType();
-  hsize_t datadims[]={0};
+  DataType dt= PredType::NATIVE_INT;
+  //  hsize_t datadims[]={0};
+
   DataSpace fspace=dataset->getSpace();
-  fspace.getSimpleExtentDims(datadims,NULL);
+  size_t nd = fspace.getSimpleExtentNdims();
+  std::vector<hsize_t> datadims(nd);
+  fspace.getSimpleExtentDims(datadims.data(),NULL);
   //  std::cout<<"Full data is of dimensions"<<datadims[0]<<"x"<<datadims[1]<<std::endl;
-  hsize_t vec_dims[1];
-  int offset=0;
-  int chunksize=datadims[0];
-  Eigen::ArrayXi arrayxi(chunksize);
+  //  std::vector<hsize_t> chunksizes=datadims;
+  std::vector<hsize_t> offset(nd);
+  std::fill(offset.begin(),offset.end(),0);
+  //  int chunksize=datadims[0];
+  hsize_t tot_size=1;
+  tot_size=std::accumulate(datadims.begin(),datadims.end(),tot_size,std::multiplies<hsize_t>());
+
+  // std::cout<<"tot_size is of returned array is: "<<tot_size<<std::endl;
+  if(tot_size==0){
+
+    Rcpp::stop("total size of returned array shouldn't be zero");
+  }
+  Eigen::ArrayXi arrayxi(tot_size);
   arrayxi.setZero();
 
-
-  if(offset+chunksize>datadims[0]){
-    Rcpp::stop("offset+chunksize>datadims[0]!");
-  }
-  vec_dims[0]=chunksize;
-  datadims[0]=chunksize;
-
-  // std::cout<<"Full data is of size "<<datadim[0]<<std::endl;
-  hsize_t offseta[1];
-  offseta[0]=offset;
-  fspace.selectHyperslab(H5S_SELECT_SET,datadims,offseta);
+  // std::cout<<"Full data is of size: ";
+  // for(auto veci:datadims){
+  //   std::cout<<veci<<" ";
+  // }
+  // std::cout<<std::endl;
+  // hsize_t offseta[1];
+  // offseta[0]=offset;
+  fspace.selectHyperslab(H5S_SELECT_SET,datadims.data(),offset.data());
   //  std::cout<<"Allocating matrix of size:"<<matrix_dims[0]<<"x"<<matrix_dims[1]<<std::endl;
   //  std::cout<<"Matrix starts at"<<row_offset<<"x"<<col_offset<<std::endl;
-  DataSpace memspace(1,vec_dims);
+  DataSpace memspace(nd,datadims.data());
   //  std::cout<<"Reading data"<<std::endl;
   try{
     dataset->read(arrayxi.data(),dt,memspace,fspace);
@@ -611,9 +623,6 @@ Eigen::ArrayXi read_ivec_h5(const std::string h5file, const std::string groupnam
     error.printError();
     Rcpp::stop("Error reading column!");
   }
-
-
-
   dt.close();
   memspace.close();
   fspace.close();
@@ -631,8 +640,8 @@ Eigen::ArrayXi read_uivec_h5(const std::string h5file, const std::string groupna
   H5DataSetPtr dataset = open_dataset(group,dataname);
   DSetCreatPropList cparms= dataset->getCreatePlist();
 
-
-  DataType dt= dataset->getDataType();
+  DataType dt= PredType::NATIVE_INT;
+  // DataType dt= dataset->getDataType();
   hsize_t datadims[]={0};
   DataSpace fspace=dataset->getSpace();
   fspace.getSimpleExtentDims(datadims,NULL);

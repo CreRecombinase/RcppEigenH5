@@ -7,6 +7,18 @@
 
 using namespace Rcpp;
 
+// rcpsplit
+std::vector<std::string> rcpsplit(const std::string s, const std::string delim);
+RcppExport SEXP _RcppEigenH5_rcpsplit(SEXP sSEXP, SEXP delimSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string >::type s(sSEXP);
+    Rcpp::traits::input_parameter< const std::string >::type delim(delimSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpsplit(s, delim));
+    return rcpp_result_gen;
+END_RCPP
+}
 // read_2d_h5_exp
 Eigen::MatrixXd read_2d_h5_exp(const StringVector h5file, const StringVector groupname, const StringVector dataname, const IntegerVector offset, const IntegerVector chunksize);
 RcppExport SEXP _RcppEigenH5_read_2d_h5_exp(SEXP h5fileSEXP, SEXP groupnameSEXP, SEXP datanameSEXP, SEXP offsetSEXP, SEXP chunksizeSEXP) {
@@ -189,6 +201,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_selfpath
+std::string get_selfpath();
+RcppExport SEXP _RcppEigenH5_get_selfpath() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(get_selfpath());
+    return rcpp_result_gen;
+END_RCPP
+}
+// h5ls
+Rcpp::StringVector h5ls(std::string h5file, std::string base_groupname);
+RcppExport SEXP _RcppEigenH5_h5ls(SEXP h5fileSEXP, SEXP base_groupnameSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type h5file(h5fileSEXP);
+    Rcpp::traits::input_parameter< std::string >::type base_groupname(base_groupnameSEXP);
+    rcpp_result_gen = Rcpp::wrap(h5ls(h5file, base_groupname));
+    return rcpp_result_gen;
+END_RCPP
+}
 // h5_rownum
 Rcpp::IntegerVector h5_rownum(const std::string h5file, const std::string groupname, const std::string dataname);
 RcppExport SEXP _RcppEigenH5_h5_rownum(SEXP h5fileSEXP, SEXP groupnameSEXP, SEXP datanameSEXP) {
@@ -283,14 +317,26 @@ BEGIN_RCPP
 END_RCPP
 }
 // h5ls_grp_exp
-std::vector<std::string> h5ls_grp_exp(std::string h5file, std::string base_group);
+std::vector<std::string> h5ls_grp_exp(const std::string h5file, const std::string base_group);
 RcppExport SEXP _RcppEigenH5_h5ls_grp_exp(SEXP h5fileSEXP, SEXP base_groupSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string >::type h5file(h5fileSEXP);
+    Rcpp::traits::input_parameter< const std::string >::type base_group(base_groupSEXP);
+    rcpp_result_gen = Rcpp::wrap(h5ls_grp_exp(h5file, base_group));
+    return rcpp_result_gen;
+END_RCPP
+}
+// group_exists
+Rcpp::LogicalVector group_exists(std::string h5file, std::string base_group);
+RcppExport SEXP _RcppEigenH5_group_exists(SEXP h5fileSEXP, SEXP base_groupSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type h5file(h5fileSEXP);
     Rcpp::traits::input_parameter< std::string >::type base_group(base_groupSEXP);
-    rcpp_result_gen = Rcpp::wrap(h5ls_grp_exp(h5file, base_group));
+    rcpp_result_gen = Rcpp::wrap(group_exists(h5file, base_group));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -465,6 +511,20 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// concat_rows_split_cols_h5
+void concat_rows_split_cols_h5(const StringVector in_h5files, const StringVector in_groupname, const StringVector in_datanames, const StringVector out_h5file, const StringVector out_groupnames);
+RcppExport SEXP _RcppEigenH5_concat_rows_split_cols_h5(SEXP in_h5filesSEXP, SEXP in_groupnameSEXP, SEXP in_datanamesSEXP, SEXP out_h5fileSEXP, SEXP out_groupnamesSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const StringVector >::type in_h5files(in_h5filesSEXP);
+    Rcpp::traits::input_parameter< const StringVector >::type in_groupname(in_groupnameSEXP);
+    Rcpp::traits::input_parameter< const StringVector >::type in_datanames(in_datanamesSEXP);
+    Rcpp::traits::input_parameter< const StringVector >::type out_h5file(out_h5fileSEXP);
+    Rcpp::traits::input_parameter< const StringVector >::type out_groupnames(out_groupnamesSEXP);
+    concat_rows_split_cols_h5(in_h5files, in_groupname, in_datanames, out_h5file, out_groupnames);
+    return R_NilValue;
+END_RCPP
+}
 // create_mat_dataset_h5_exp
 void create_mat_dataset_h5_exp(const StringVector h5file, const StringVector groupname, const StringVector dataname, const IntegerVector dims, const IntegerVector chunkdims, const IntegerVector deflate_level, const bool doTranspose);
 RcppExport SEXP _RcppEigenH5_create_mat_dataset_h5_exp(SEXP h5fileSEXP, SEXP groupnameSEXP, SEXP datanameSEXP, SEXP dimsSEXP, SEXP chunkdimsSEXP, SEXP deflate_levelSEXP, SEXP doTransposeSEXP) {
@@ -577,6 +637,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_RcppEigenH5_rcpsplit", (DL_FUNC) &_RcppEigenH5_rcpsplit, 2},
     {"_RcppEigenH5_read_2d_h5_exp", (DL_FUNC) &_RcppEigenH5_read_2d_h5_exp, 5},
     {"_RcppEigenH5_read_1d_h5", (DL_FUNC) &_RcppEigenH5_read_1d_h5, 5},
     {"_RcppEigenH5_read_svec_exp", (DL_FUNC) &_RcppEigenH5_read_svec_exp, 3},
@@ -590,6 +651,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_RcppEigenH5_read_2d_index_h5", (DL_FUNC) &_RcppEigenH5_read_2d_index_h5, 4},
     {"_RcppEigenH5_read_2d_index_chunk_h5", (DL_FUNC) &_RcppEigenH5_read_2d_index_chunk_h5, 5},
     {"_RcppEigenH5_read_1d_index_h5", (DL_FUNC) &_RcppEigenH5_read_1d_index_h5, 4},
+    {"_RcppEigenH5_get_selfpath", (DL_FUNC) &_RcppEigenH5_get_selfpath, 0},
+    {"_RcppEigenH5_h5ls", (DL_FUNC) &_RcppEigenH5_h5ls, 2},
     {"_RcppEigenH5_h5_rownum", (DL_FUNC) &_RcppEigenH5_h5_rownum, 3},
     {"_RcppEigenH5_h5_colnum", (DL_FUNC) &_RcppEigenH5_h5_colnum, 3},
     {"_RcppEigenH5_calc_af", (DL_FUNC) &_RcppEigenH5_calc_af, 7},
@@ -597,6 +660,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_RcppEigenH5_calc_var", (DL_FUNC) &_RcppEigenH5_calc_var, 6},
     {"_RcppEigenH5_calc_yh", (DL_FUNC) &_RcppEigenH5_calc_yh, 7},
     {"_RcppEigenH5_h5ls_grp_exp", (DL_FUNC) &_RcppEigenH5_h5ls_grp_exp, 2},
+    {"_RcppEigenH5_group_exists", (DL_FUNC) &_RcppEigenH5_group_exists, 2},
     {"_RcppEigenH5_h5ls_attr_exp", (DL_FUNC) &_RcppEigenH5_h5ls_attr_exp, 2},
     {"_RcppEigenH5_get_h5_version_exp", (DL_FUNC) &_RcppEigenH5_get_h5_version_exp, 0},
     {"_RcppEigenH5_read_data_attr_h5_exp", (DL_FUNC) &_RcppEigenH5_read_data_attr_h5_exp, 4},
@@ -610,6 +674,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_RcppEigenH5_write_data_int_attr_h5_exp", (DL_FUNC) &_RcppEigenH5_write_data_int_attr_h5_exp, 5},
     {"_RcppEigenH5_write_group_int_attr_h5_exp", (DL_FUNC) &_RcppEigenH5_write_group_int_attr_h5_exp, 4},
     {"_RcppEigenH5_write_mat_chunk_h5_exp", (DL_FUNC) &_RcppEigenH5_write_mat_chunk_h5_exp, 5},
+    {"_RcppEigenH5_concat_rows_split_cols_h5", (DL_FUNC) &_RcppEigenH5_concat_rows_split_cols_h5, 5},
     {"_RcppEigenH5_create_mat_dataset_h5_exp", (DL_FUNC) &_RcppEigenH5_create_mat_dataset_h5_exp, 7},
     {"_RcppEigenH5_write_mat_h5_exp", (DL_FUNC) &_RcppEigenH5_write_mat_h5_exp, 6},
     {"_RcppEigenH5_write_dvec_h5_exp", (DL_FUNC) &_RcppEigenH5_write_dvec_h5_exp, 5},

@@ -117,6 +117,7 @@ H5DataSetPtr open_dataset(H5GroupPtr &group,const std::string &dataname)
       Rcpp::stop("Error opening dataset");
     }
   }else{
+    Rcpp::Rcerr<<"Can't find "<<dataname<<std::endl;
     Rcpp::stop("Dataset not found!");
   }
   return H5DataSetPtr(dataset);

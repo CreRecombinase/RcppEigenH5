@@ -10,6 +10,7 @@ using namespace H5;
 typedef std::shared_ptr<Group> H5GroupPtr;
 typedef std::shared_ptr<H5File> H5FilePtr;
 typedef std::shared_ptr<DataSet> H5DataSetPtr;
+typedef std::shared_ptr<DataSpace> H5DataSpacePtr;
 
 typedef Eigen::Array<double, Eigen::Dynamic, 1> ColumnArray;
 typedef Eigen::Matrix<double, Eigen::Dynamic, 1> ColumnMatrix;
@@ -53,6 +54,40 @@ typedef std::tuple<std::string, std::string,std::string> hnames;
 typedef std::pair<size_t,size_t> matdim;
 
 
+namespace Eigen
+{
+
+#define EIGEN_MAKE_TYPEDEFS(Size, SizeSuffix)                     \
+/** \ingroup matrixtypedefs */                                    \
+template <typename Type>                                          \
+using Matrix##SizeSuffix = Matrix<Type, Size, Size>;              \
+/** \ingroup matrixtypedefs */                                    \
+template <typename Type>                                          \
+using Vector##SizeSuffix = Matrix<Type, Size, 1>;                 \
+/** \ingroup matrixtypedefs */                                    \
+template <typename Type>                                          \
+using RowVector##SizeSuffix = Matrix<Type, 1, Size>;
+
+#define EIGEN_MAKE_FIXED_TYPEDEFS(Size)                           \
+/** \ingroup matrixtypedefs */                                    \
+template <typename Type>                                          \
+using Matrix##Size##X = Matrix<Type, Size, Dynamic>;              \
+/** \ingroup matrixtypedefs */                                    \
+template <typename Type>                                          \
+using Matrix##X##Size = Matrix<Type, Dynamic, Size>;
+
+EIGEN_MAKE_TYPEDEFS(2, 2)
+  EIGEN_MAKE_TYPEDEFS(3, 3)
+  EIGEN_MAKE_TYPEDEFS(4, 4)
+  EIGEN_MAKE_TYPEDEFS(Dynamic, X)
+  EIGEN_MAKE_FIXED_TYPEDEFS(2)
+  EIGEN_MAKE_FIXED_TYPEDEFS(3)
+  EIGEN_MAKE_FIXED_TYPEDEFS(4)
+
+#undef EIGEN_MAKE_TYPEDEFS
+#undef EIGEN_MAKE_FIXED_TYPEDEFS
+
+}
 
 
 #endif

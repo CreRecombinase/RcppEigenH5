@@ -1,51 +1,87 @@
 context("h5 compatability")
+# #
+# test_that("calcAF works as expected",{
+#   test_mat <-matrix(runif(9*8),9,8)
+#   test_means <- colMeans(test_mat)/2
+#   tfile <- tempfile()
+#   write_mat_h5(tfile,"test","geno",data=test_mat)
+#   sub_i <- c(1,3,5,7)
+#   sub_means <- calc_af(tfile,"test","geno",index = sub_i,chunksize = 2,check_dup = F)
+#   expect_equal(test_means[sub_i],sub_means)
+#   sub_i <- c(1:8)
+#   sub_means <- calc_af(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
+#   tmi <- test_mat
+#   tmi[] <- as.integer(tmi)
+#   tmd <- duplicated(tmi,MARGIN = 2)
+#   test_means[tmd] <- 0
+#   expect_equal(test_means[sub_i],sub_means)
+#   sub_means<-calc_af(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
+#   expect_equal(test_means[sub_i],sub_means)
 #
-test_that("calcAF works as expected",{
-  test_mat <-matrix(runif(9*8),9,8)
-  test_means <- colMeans(test_mat)/2
-  tfile <- tempfile()
-  write_mat_h5(tfile,"test","geno",data=test_mat)
-  sub_i <- c(1,3,5,7)
-  sub_means <- calc_af(tfile,"test","geno",index = sub_i,chunksize = 2,check_dup = F)
-  expect_equal(test_means[sub_i],sub_means)
-  sub_i <- c(1:8)
-  sub_means <- calc_af(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
-  tmi <- test_mat
-  tmi[] <- as.integer(tmi)
-  tmd <- duplicated(tmi,MARGIN = 2)
-  test_means[tmd] <- 0
-  expect_equal(test_means[sub_i],sub_means)
-  sub_means<-calc_af(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
-  expect_equal(test_means[sub_i],sub_means)
+# })
+
+test_that("Crazy hack append function works",{
+  n_row <- 15
+  n_col <- 6
+  row_chunks <- 5
+  col_chunks <- 3
+  test_mat <-matrix(as.numeric(1:(n_row*n_col)),n_row,n_col)
+  test_mat_2 <-matrix(rev(as.numeric(1:(n_row*n_col))),n_row,n_col)
+  chunk_rows <- BBmisc::chunk(1:n_row,chunk.size = row_chunks)
+  chunk_cols <- BBmisc::chunk(1:n_col,chunk.size=col_chunks)
+
+  file_mat <- matrix(replicate(length(chunk_rows)*length(chunk_cols),tempfile()),length(chunk_rows),length(chunk_cols))
+  for(i in 1:length(chunk_rows)){
+    for(j in 1:length(chunk_cols)){
+      sub_mat <-test_mat[chunk_rows[[i]],chunk_cols[[j]]]
+      sub_mat_2 <-test_mat_2[chunk_rows[[i]],chunk_cols[[j]]]
+      stopifnot(all(sub_mat!=0))
+      write_mat_h5(h5file = file_mat[i,j],groupname="test_group",dataname="test_data",data=sub_mat,deflate_level = 2,doTranspose = T)
+      write_mat_h5(h5file = file_mat[i,j],groupname="test_group",dataname="test_data_2",data=sub_mat_2,deflate_level = 2,doTranspose = T)
+    }
+  }
+
+  ncolnames <- as.character(chunk_cols[[1]])
+  in_files <- file_mat[,1]
+  outfile <- tempfile()
+
+  concat_rows_split_cols_h5(in_h5files = in_files,in_groupname = "test_group",in_dataname = c("test_data","test_data_2"),out_h5file = outfile,out_groupnames = ncolnames)
+  l_col <- read_dvec(outfile,"1","test_data")
+  expect_equal(c(l_col),test_mat[,chunk_cols[[1]]][,1])
+
+all_cols <- lapply(ncolnames,function(x){read_dvec(outfile,groupname = x,dataname = "test_data")})
+all_cols_2 <- lapply(ncolnames,function(x){read_dvec(outfile,groupname = x,dataname = "test_data_2")})
+omat <- do.call("cbind",all_cols)
+omat_2 <- do.call("cbind",all_cols_2)
+expect_equal(omat,test_mat[,chunk_cols[[1]]])
+expect_equal(omat_2,test_mat_2[,chunk_cols[[1]]])
 
 })
 
-
-
-
-test_that("calc_summ_h5 works as expected (without duplicates)",{
-  test_mat <-matrix(runif(9*8),9,8)
-  test_means <- colMeans(test_mat)/2
-  test_mins <- apply(test_mat,2,min)
-  test_maxs <- apply(test_mat,2,max)
-  dups <-duplicated(test_mat,MARGIN = 2)
-  tfile <- tempfile()
-  write_mat_h5(tfile,"test","geno",data=test_mat)
-  sub_i <- c(1,3,5,7)
-  sub_summ <- calc_summ_h5(tfile,"test","geno",index = sub_i,chunksize = 2,check_dup = F)
-  test_df <- data.frame(af=test_means[sub_i],min=test_mins[sub_i],max=test_maxs[sub_i],isDup=dups[sub_i],index=sub_i)
-  expect_equal(test_df,sub_summ)
-  sub_i <- c(1:8)
-  sub_summ <- calc_summ_h5(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
-  tmi <- test_mat
-  tmi[] <- as.integer(tmi)
-  tmd <- duplicated(tmi,MARGIN = 2)
-  test_means[tmd] <- 0
-  expect_equal(test_means[sub_i],sub_means)
-  sub_means<-calc_af(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
-  expect_equal(test_means[sub_i],sub_means)
-
-})
+#
+# test_that("calc_summ_h5 works as expected (without duplicates)",{
+#   test_mat <-matrix(runif(9*8),9,8)
+#   test_means <- colMeans(test_mat)/2
+#   test_mins <- apply(test_mat,2,min)
+#   test_maxs <- apply(test_mat,2,max)
+#   dups <-duplicated(test_mat,MARGIN = 2)
+#   tfile <- tempfile()
+#   write_mat_h5(tfile,"test","geno",data=test_mat)
+#   sub_i <- c(1,3,5,7)
+#   sub_summ <- calc_summ_h5(tfile,"test","geno",index = sub_i,chunksize = 2,check_dup = F)
+#   test_df <- data.frame(af=test_means[sub_i],min=test_mins[sub_i],max=test_maxs[sub_i],isDup=dups[sub_i],index=sub_i)
+#   expect_equal(test_df,sub_summ)
+#   sub_i <- c(1:8)
+#   sub_summ <- calc_summ_h5(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
+#   tmi <- test_mat
+#   tmi[] <- as.integer(tmi)
+#   tmd <- duplicated(tmi,MARGIN = 2)
+#   test_means[tmd] <- 0
+#   expect_equal(test_means[sub_i],sub_means)
+#   sub_means<-calc_af(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
+#   expect_equal(test_means[sub_i],sub_means)
+#
+# })
 
 
 
@@ -159,7 +195,7 @@ test_that("matrices written from h5 and RcppEigenH5  read the same (by RcppEigen
   # h5close(th5f)
   tf2 <- tempfile()
   write_mat_h5(tf2,"/","test",test_mat)
-  write_mat_h5(tf2,"/","test_T",test_mat,deflate_level = 4,doTranspose = T)
+  write_mat_h5(tf2,"/","test_T",test_mat,deflate_level = 4,doTransopse = T)
   # read_mat <- read_2d_h5(tfile,"/","test",c(0L,0L),c(9L,8L))
   read_mat_2 <-read_2d_h5(tf2,"/","test",c(0L,0L),c(n,p))
   read_mat_t <-read_2d_h5(tf2,"/","test_T",c(0L,0L),c(n,p))
@@ -434,20 +470,111 @@ test_that("subsetting vectors works as expected",{
 })
 
 
-test_that("Attributes are read and written correctly",{
+
+test_that("Checking for group existence works",{
+
+  n <- 10
+  p <- 8000
+  test_mat_1 <- matrix(runif(n*p),n,p)
+  tfile <- tempfile()
+  write_mat_h5(tfile,"test","testmat1",test_mat_1,deflate_level = 4L,doTranspose = T)
+  expect_true(group_exists(tfile,"test"))
+  expect_true(group_exists(tfile))
+  expect_false(group_exists(tfile,"nottest"))
+  expect_false(group_exists(tfile,"test/2"))
+  expect_false(group_exists(tfile,"test/testmat1"))
+
+})
+
+test_that("Nested groups work",{
+
+  n <- 10
+  p <- 8000
+  test_mat_1 <- matrix(runif(n*p),n,p)
+  test_mat_2 <- matrix(runif(n*p),n,p)
 
   tfile <- tempfile()
-  # th5f <- h5file(tfile,'a')
-  Rattr <- "SNAKE"
-  # RColumbo::set_attr(tfile,groupname = "grp",attrname = "data",attrvalue = Rattr)
-  RColumbo::set_attr(tfile,groupname = "grp",attrname = "data",attrvalue = Rattr)
-  # RColumbo::set_attr(tfile,groupname = "grp/data",attrname = "data",attrvalue = Rattr)
-  mattr <- read_group_attr_h5(h5file = tfile,groupname = "grp",attr_name = "data")
-  # dattr <- read_data_attr_h5(tfile,"grp","data","data")
-  expect_equal(Rattr,mattr)
+  write_mat_h5(tfile,"test","testmat1",test_mat_1,deflate_level = 4L,doTranspose = T)
+  expect_true(group_exists(tfile,"test"))
+  write_mat_h5(tfile,"test/2","testmat2",test_mat_2,deflate_level = 4L,doTranspose = T)
+  expect_true(group_exists(tfile,"test/2"))
+  list_groups_h5(tfile,base_group = "test")
+  tt_1 <- read_2d_mat_h5(tfile,"test","testmat1")
+  tt_2 <- read_2d_mat_h5(tfile,"test/2","testmat2")
+  expect_equal(test_mat_1,tt_1)
+  expect_equal(test_mat_2,tt_2)
+})
+
+
+
+test_that("H5LS works",{
+
+  n <- 10
+  p <- 8000
+  test_mat_1 <- matrix(runif(n*p),n,p)
+  test_mat_2 <- matrix(runif(n*p),n,p)
+
+  tfile <- tempfile()
+  write_mat_h5(tfile,"test","testmat1",test_mat_1,deflate_level = 4L,doTranspose = T)
+  write_mat_h5(tfile,"test/2","testmat2",test_mat_2,deflate_level = 4L,doTranspose = T)
+  write_mat_h5(tfile,"/","testmat0",test_mat_2,deflate_level = 4L,doTranspose = T)
+  list_groups_h5(tfile,base_group = "test")
+  tt_1 <- read_2d_mat_h5(tfile,"test","testmat1")
+  tt_2 <- read_2d_mat_h5(tfile,"test/2","testmat2")
+  expect_equal(h5ls(tfile),c("/test/2/testmat2","/test/testmat1","/testmat0"))
+
+
+})
+
+
+# test_that("Writing nested DFs works",{
+#
+#   # n <- 10
+#   # p <- 8000
+#   # test_mat_1 <- matrix(runif(n*p),n,p)
+#   # test_mat_2 <- matrix(runif(n*p),n,p)
+#   #
+#   # tnest_df <- beaver1 %>% nest(-activ)
+#   # tfile <- tempfile()
+#   # write_df_h5(tnest_df,groupname="data",outfile=tfile)
+#   # list_groups_h5(tfile,base_group = "test")
+#   # tt_1 <- read_2d_mat_h5(tfile,"test","testmat1")
+#   # tt_2 <- read_2d_mat_h5(tfile,"test/2","testmat2")
+#   # expect_equal(h5ls(tfile),c("/test/2/testmat2","/test/testmat1","/testmat0"))
+#
+#
+# })
+
+testthat::test_that("Writing attributes works",{
+
+  n <- 10
+  p <- 8000
+  test_mat_1 <- matrix(runif(n*p),n,p)
+  tfile <- tempfile()
+  write_mat_h5(tfile,"test","testmat1",test_mat_1,deflate_level = 4L,doTranspose = T)
+  write_data_string_attr_h5(h5filename = tfile,h5_groupname = "test",h5_dataname = "testmat1",h5_attr_name = "testv",h5_attr_value = "test_value")
+  read_data_attr_h5(tfile,"test","testmat1","testv")
 
 })
 
 
 
+test_that("Reading and writng sparse matrices works",{
+
+  library(Matrix)
+  tfile <- tempfile()
+
+  i <- c(1,3:8); j <- c(2,9,6:10); x <- 7.2 * (1:7)
+  A <- sparseMatrix(i, j, x = x)
+  ai <-A@i
+  aj <-A@p
+  ax <-A@x
+
+  write_ivec_h5(tfile,"R","ir",data=ai)
+  write_ivec_h5(tfile,"R","jc",data=aj)
+  write_dvec_h5(tfile,"R","data",data=ax)
+  tdims <- dim(A)
+  res_mat <- read_ccs_h5(tfile,"R",dims = tdims)
+  expect_equal(res_mat,A)
+})
 

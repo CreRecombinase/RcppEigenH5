@@ -164,13 +164,25 @@ std::vector<int> read_group_iarray_attr_h5(const std::string h5file, const std::
 void write_data_string_attr_h5(const std::string h5file, const std::string groupname, const std::string dataname,const std::string attr_name,const std::string attr_value){
   using namespace H5;
   H5std_string strreadbuf ("");
-  H5FilePtr file=open_file(h5file);
+  H5FilePtr file=create_or_open_file(h5file);
   H5GroupPtr group= open_group(file,groupname);
   H5DataSetPtr dataset = open_dataset(group,dataname);
+  std::shared_ptr<Attribute> attr;
   StrType strdatatype(0,H5T_VARIABLE);
   DataSpace att_space(H5S_SCALAR);
-  Attribute attr = dataset->createAttribute(attr_name,strdatatype,att_space);
-  attr.write(strdatatype,attr_value);
+  try{
+    attr = std::make_shared<Attribute>(dataset->createAttribute(attr_name,strdatatype,att_space));
+  }catch(H5::AttributeIException error){
+    error.printError();
+    Rcpp::stop("Error writing attribute");
+  }
+  try{
+    attr->write(strdatatype,attr_value);
+  }catch(H5::AttributeIException	error){
+    error.printError();
+    Rcpp::stop("Error writing attribute");
+  }
+  attr->close();
   dataset->close();
   group->close();
   file->close();
@@ -179,12 +191,17 @@ void write_data_string_attr_h5(const std::string h5file, const std::string group
 void write_group_string_attr_h5(const std::string h5file, const std::string groupname,const std::string attr_name,const std::string attr_value){
   using namespace H5;
   H5std_string strreadbuf ("");
-  H5FilePtr file=open_file(h5file);
+  H5FilePtr file=create_or_open_file(h5file);
   H5GroupPtr group= open_group(file,groupname);
   StrType strdatatype(0,H5T_VARIABLE);
   DataSpace att_space(H5S_SCALAR);
   Attribute attr = group->createAttribute(attr_name,strdatatype,att_space);
-  attr.write(strdatatype,attr_value);
+  try{
+    attr.write(strdatatype,attr_value);
+  }catch(H5::AttributeIException	error){
+    error.printError();
+    Rcpp::stop("Error writing attribute");
+  }
   group->close();
   file->close();
 }
@@ -193,7 +210,7 @@ void write_group_string_attr_h5(const std::string h5file, const std::string grou
 void write_group_int_attr_h5(const std::string h5file, const std::string groupname,const std::string attr_name,const int attr_value){
   using namespace H5;
   H5std_string strreadbuf ("");
-  H5FilePtr file=open_file(h5file);
+  H5FilePtr file=create_or_open_file(h5file);
   H5GroupPtr group= open_group(file,groupname);
   IntType intdatatype(PredType::NATIVE_INT);
   DataSpace att_space(H5S_SCALAR);
@@ -206,7 +223,7 @@ void write_group_int_attr_h5(const std::string h5file, const std::string groupna
 void write_data_int_attr_h5(const std::string h5file, const std::string groupname, const std::string dataname,const std::string attr_name,const int attr_value){
   using namespace H5;
   H5std_string strreadbuf ("");
-  H5FilePtr file=open_file(h5file);
+  H5FilePtr file=create_or_open_file(h5file);
   H5GroupPtr group= open_group(file,groupname);
   H5DataSetPtr dataset = open_dataset(group,dataname);
   IntType intdatatype(PredType::NATIVE_INT);
