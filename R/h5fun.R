@@ -141,7 +141,7 @@ libpath <- function() {
 
 
 
-read_ccs_h5 <- function(h5filename,groupname,dataname="data",iname="ir",pname="jc",isSymmetric=NULL){
+read_ccs_h5 <- function(h5filename,groupname,dataname="data",iname="ir",pname="jc",isSymmetric=NULL,dims=NULL){
   # require("h5")
   require("Matrix")
 
@@ -160,22 +160,22 @@ read_ccs_h5 <- function(h5filename,groupname,dataname="data",iname="ir",pname="j
   data <- read_dvec(h5filename,groupname,dataname)
   i <- read_ivec(h5filename,groupname,iname)
   p <- read_ivec(h5filename,groupname,pname)
-  rows <- NULL
-  cols <- NULL
-  if("rows" %in% h5_attrs){
-    rows <- read_igroup_attr_h5(h5filename,groupname,"rows")
-  }
-  if("cols" %in% h5_attrs){
-    cols <- read_igroup_attr_h5(h5filename,groupname,"cols")
-  }
-  if(is.null(rows)){
-    rows <- cols
-  }
-  if(is.null(cols)){
-    cols <- rows
-  }
-  dims <- c(rows,cols)
   if(is.null(dims)){
+    rows <- NULL
+    cols <- NULL
+    if("rows" %in% h5_attrs){
+      rows <- read_igroup_attr_h5(h5filename,groupname,"rows")
+    }
+    if("cols" %in% h5_attrs){
+      cols <- read_igroup_attr_h5(h5filename,groupname,"cols")
+    }
+    if(is.null(rows)){
+      rows <- cols
+    }
+    if(is.null(cols)){
+      cols <- rows
+    }
+    dims <- c(rows,cols)
     if("Dimensions" %in% h5_attrs){
       dims <- read_group_iarray_attr_h5(h5filename,groupname,"Dimensions")
     }else{
@@ -185,34 +185,120 @@ read_ccs_h5 <- function(h5filename,groupname,dataname="data",iname="ir",pname="j
   return(Matrix::sparseMatrix(i=i,p=p,x=data,index1 = F,dims = dims))
 }
 
+#
+# write_data_fun(h5file,h5group,h5dataname,data,deflate_level=4,chunksize=1000L){
+#   stopifnot(typeof(data)!="list")
+#   if(!is.null(dim(data))){
+#     stopifnot(length(dim(data))==2)
+#     if(typeof(data)=="double"){
+#       write_mat_h5(h5file,h5group,h5dataname,data,deflate_level = deflate_level)
+#     }else{
+#       stop("writing of matrices only supported for doubles(currently)")
+#     }
+#   }else{
+#     if(typeof(data)=="double"){
+#       write_dvec_h5(h5file,h5group,h5dataname,data,deflate_level = deflate_level)
+#     }else{
+#       if(typeof(data)=="character"){
+#         stop("Writing of strings not currently supported")
+#       }else{
+#         if(typeof(data)=="integer"){
+#           write_ivec_h5(h5file,h5group,h5dataname,data,deflate_level = deflate_level)
+#         }
+#       }
+#     }
+#   }
+#
+# }
 
-
-write_df_h5 <- function(df,groupname,outfile,deflate_level=4L,chunksize=1000L){
-  if(nrow(df)<chunksize){
+write_df_h5g_alt <- function(df,grpname,deflate_level=4,chunksize=1000L){
+  dfl <- nrow(df)
+  if(dfl<chunksize){
     chunksize <- nrow(df)
   }
+
   deflate_level <- as.integer(deflate_level)
-  require(h5)
-  dataname <- colnames(df)
+  library(h5)
+  # dataname <- colnames(df)
   f <-h5file(outfile,mode = 'a')
+  stopifnot(groupname!="/")
   if(existsGroup(f,groupname)){
     h5close(f)
     res <- append_df_h5(df,groupname,outfile,deflate_level)
     return(res)
+  }else{
+    group <- createGroup(f,groupname)
   }
-  group <- createGroup(f,groupname)
+  write_df_h5g(df = df,grp = group,deflate_level = deflate_level,chunksize = chunksize)
+}
+
+
+
+
+
+write_df_h5g <- function(df,grp,deflate_level=4L,chunksize=1000L){
+  dataname <- colnames(df)
+  dtypes <- sapply(df,typeof)
+  dfl <- nrow(df)
   for(i in 1:length(dataname)){
     dsn <- dataname[i]
     td <- df[[dsn]]
-    tdata <- createDataSet(.Object = group,
-                           datasetname = dsn,
-                           type = typeof(td),
-                           dimensions = length(td),
-                           chunksize =chunksize,
-                           maxdimensions = NA_integer_,
-                           compression = deflate_level)
-    tdata[] <- td
+    dt <- dtypes[i]
+    if(dt!="list"){
+      if(is.null(dim(td))){
+        tdata <- createDataSet(.Object = group,
+                               datasetname = dsn,
+                               type = typeof(td),
+                               dimensions = length(td),
+                               chunksize =chunksize,
+                               maxdimensions = NA_integer_,
+                               compression = deflate_level)
+        tdata[] <- td
+      }else{
+        tdata <- createDataSet(.Object = group,
+                               datasetname = dsn,
+                               type = typeof(td),
+                               dimensions = dim(td),
+                               chunksize =chunksize,
+                               maxdimensions = NA_integer_,
+                               compression = deflate_level)
+        tdata[,] <- td
+      }
+    }else{
+      stopifnot(length(td)==dfl)
+      for(j in 1:length(td)){
+        # tbasegroup <-paste(groupname,j,sep="/")
+        tgrp <- createGroup(group,groupname = as.character(j))
+        write_df_h5g(df = td,grp = tgrp)
+        h5close(tgrp)
+      }
+    }
   }
+  return(T)
+}
+
+
+write_df_h5 <- function(df,groupname,outfile,deflate_level=4L,chunksize=1000L){
+  dfl <- nrow(df)
+  if(dfl<chunksize){
+    chunksize <- nrow(df)
+  }
+
+  deflate_level <- as.integer(deflate_level)
+  library(h5)
+  # dataname <- colnames(df)
+  f <-h5file(outfile,mode = 'a')
+  stopifnot(groupname!="/")
+  if(existsGroup(f,groupname)){
+    h5close(f)
+    res <- append_df_h5(df,groupname,outfile,deflate_level)
+    return(res)
+  }else{
+    group <- createGroup(f,groupname)
+  }
+  write_df_h5g(df = df,grp = group,deflate_level = deflate_level,chunksize = chunksize)
+
+
   h5close(f)
   return(T)
 }

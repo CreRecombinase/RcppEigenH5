@@ -57,20 +57,51 @@ int get_colnum_h5(const std::string h5file,const std::string groupname, const st
 
 
 
-std::vector<std::string> getGroups(const std::string h5file){
 
 
-  H5FilePtr file = open_file(h5file);
-  hsize_t objc= file->getNumObjs();
-  std::vector<std::string> retvec(objc);
+//[[Rcpp::export]]
+std::vector<std::string> rcpsplit(const std::string s, const std::string delim) {
+  std::vector<std::string> elems;
+  const char tdelim=delim.c_str()[0];
+  return split_string(s, tdelim);
+}
+//
 
-  if(objc!=0){
-    for(hsize_t i=0; i<objc;i++){
-      std::string tst=file->getObjnameByIdx(i);
-      retvec[i]=tst;
+//Starting at some base group, recursively(?) list all datasets in the group (and subgroups)
+std::vector<std::string>h5_ls_dset(const H5GroupPtr grp,const std::string basename){
+
+  size_t objc =grp->getNumObjs();
+  std::vector<std::string> dsets(0);
+  for(hsize_t i=0; i<objc;i++){
+    if(grp->getObjTypeByIdx(i)==H5G_GROUP){
+      std::string grpname=grp->getObjnameByIdx(i);
+      std::string nbasename=basename+grpname+"/";
+      H5GroupPtr trg=std::make_shared<Group>(grp->openGroup(grpname));
+      std::vector<std::string> tdsets=h5_ls_dset(trg,nbasename);
+      dsets.insert(dsets.end(),tdsets.begin(),tdsets.end());
+      trg->close();
+    }else{
+      if(grp->getObjTypeByIdx(i)==H5G_DATASET){
+        std::string dsname=grp->getObjnameByIdx(i);
+        dsets.push_back(basename+dsname);
+      }
     }
   }
-  file->close();
+  return(dsets);
+}
+
+std::vector<std::string> list_subgroups(const H5FilePtr file,const std::string base){
+
+
+//  H5GroupPtr trg=get_groups(file,base);
+  std::vector<std::string> groupvec=split_string(base,'/');
+  size_t groupsize=groupvec.size();
+  std::vector<std::string> retvec;
+
+  if(grp_path_exists(file,base)){
+    H5GroupPtr trg = open_group(file,base);
+    return(subgrp_grp(trg));
+  }
   return(retvec);
 }
 

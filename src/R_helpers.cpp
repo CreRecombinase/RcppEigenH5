@@ -5,9 +5,34 @@ using namespace Rcpp;
 #include <progress.hpp>
 #include <unordered_set>
 #include <unordered_map>
+#include <unistd.h>
+#include <limits.h>
 
 
 
+
+//[[Rcpp::export]]
+std::string get_selfpath() {
+  char buff[PATH_MAX];
+  ssize_t len = ::readlink("/proc/self/exe", buff, sizeof(buff)-1);
+  if (len != -1) {
+    buff[len] = '\0';
+    return std::string(buff);
+  }
+  /* handle error condition */
+}
+
+//[[Rcpp::export]]
+Rcpp::StringVector h5ls(std::string h5file,std::string base_groupname="/"){
+
+//  H5FilePtr open_file(const std::string fname)
+  H5FilePtr tf=open_file(h5file);
+
+  H5GroupPtr grp = open_group(tf,base_groupname);
+  Rcpp::StringVector retstring = Rcpp::wrap(h5_ls_dset(grp,base_groupname));
+  return(retstring);
+
+}
 
 
 
@@ -243,24 +268,25 @@ Rcpp::NumericVector calc_yh(const std::string h5file,const std::string groupname
 }
 
 //[[Rcpp::export(name="list_groups_h5")]]
-std::vector<std::string> h5ls_grp_exp(std::string h5file,std::string base_group="/")
+std::vector<std::string> h5ls_grp_exp(const std::string h5file,const std::string base_group="/")
 {
   H5FilePtr file=open_file(h5file);
-  Group* group;
-  Group *rg = new Group(file->openGroup(base_group));
-  size_t num_grp_attrs=0;
-  std::set<std::string> attr_names;
-  hsize_t objc= rg->getNumObjs();
-  std::vector<std::string> groupNames(objc);
-  if(objc!=0){
-    for(hsize_t i=0; i<objc;i++){
-      std::string tst=rg->getObjnameByIdx(i);
-      groupNames[i]=tst;
-    }
-  }
+std::vector<std::string> groupNames=list_subgroups(file, base_group);
   file->close();
   return(groupNames);
 }
+
+
+
+//[[Rcpp::export]]
+Rcpp::LogicalVector group_exists(std::string h5file,std::string base_group="/"){
+Rcpp::LogicalVector res(1);
+  H5FilePtr file=open_file(h5file);
+  res(0)=grp_path_exists(file,base_group);
+  file->close();
+  return(res);
+}
+
 
 //[[Rcpp::export(name="list_attrs_h5")]]
 std::vector<std::string> h5ls_attr_exp(std::string h5file,std::string base_group="/")
