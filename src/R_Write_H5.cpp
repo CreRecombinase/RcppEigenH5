@@ -18,6 +18,95 @@ void write_mat_chunk_h5_exp(const StringVector h5file, const StringVector groupn
 
 
 //[[Rcpp::export]]
+void create_groups_rows_split_cols_h5(const StringVector in_h5files,
+                               const StringVector in_groupname,
+                               const StringVector in_datanames,
+                               const StringVector out_h5file,
+                               const StringVector out_groupnames){
+
+
+  const std::vector<std::string> i_datanames=Rcpp::as<std::vector<std::string>>(in_datanames);
+  const size_t num_data=i_datanames.size();
+
+  const size_t n_in_files=in_h5files.size();
+  size_t tot_rows=0;
+  const std::string o_filename(out_h5file[0]);
+  const std::string i_groupname(in_groupname[0]);
+  //  std::string i_dataname(in_dataname[0]);
+  const std::vector<std::string> o_groupnames=Rcpp::as<std::vector<std::string>>(out_groupnames);
+  const std::vector<std::string> o_datanames=i_datanames;
+  std::vector<size_t> tot_cols_v(n_in_files);
+  std::vector<size_t> tot_rows_v(n_in_files);
+
+  size_t max_rows=0;
+  for(size_t i=0;i<n_in_files;i++){
+    size_t temp_rows=get_rownum_h5(std::string(in_h5files[i]),i_groupname,i_datanames[0]);
+    tot_cols_v[i]= get_colnum_h5(std::string(in_h5files[i]),i_groupname,i_datanames[0]);
+    for(size_t j=0; j<num_data;j++){
+      if((get_rownum_h5(std::string(in_h5files[i]),i_groupname,i_datanames[j])!=temp_rows)||
+         (get_colnum_h5(std::string(in_h5files[i]),i_groupname,i_datanames[j])!=tot_cols_v[i])){
+        Rcpp::stop("all data must have the same dimensions");
+      }
+    }
+
+    tot_rows+=temp_rows;
+    tot_rows_v[i]=temp_rows;
+    if(temp_rows>max_rows){
+      max_rows=temp_rows;
+    }
+
+    if(i>0){
+      if(tot_cols_v[i-1]!=tot_cols_v[i]){
+        Rcpp::stop("All files must have equal number of columns");
+      }
+    }
+  }
+  std::vector<size_t> row_offset(n_in_files);
+  row_offset[0]=0;
+  std::partial_sum(tot_rows_v.begin(),tot_rows_v.end()-1,row_offset.begin()+1);
+
+
+  size_t tot_cols=tot_cols_v[0];
+  if(tot_cols!=out_groupnames.size()){
+    Rcpp::stop("Groupnames not the same size as number of columns!");
+  }
+//  Progress p(tot_cols, false);
+  std::vector<double> dbuffer(max_rows*tot_cols);
+  std::vector<double> tbuffer(max_rows);
+
+
+
+//  std::vector<size_t> chunk_dims={tot_rows/2,1};
+  FloatType ftypew(PredType::NATIVE_DOUBLE);
+
+  std::vector<hsize_t> cumdim{tot_rows};
+  std::vector<hsize_t> maxdim{tot_rows};
+  std::vector<hsize_t> chunkdim{tot_rows/2};
+
+  Progress pp(tot_cols, true);
+  H5FilePtr file_o =create_or_open_file(o_filename);
+//  Rcpp::Rcout<<"Creating Groups";
+  for(size_t i=0; i<tot_cols;i++){
+    if(Progress::check_abort()){
+      Rcpp::stop("Process Aborted");
+    }
+    std::string gname(out_groupnames[i]);
+    H5GroupPtr group =create_or_open_group(file_o,gname);
+    for(size_t j=0; j<num_data;j++){
+      H5DataSetPtr dataset =create_or_open_dataset(group,o_datanames[j],ftypew,cumdim,maxdim,chunkdim,1);
+      write_transpose(dataset,false);
+      dataset->close();
+    }
+    group->close();
+    pp.increment();
+  }
+  file_o->flush(H5F_SCOPE_GLOBAL);
+  file_o->close();
+}
+
+
+
+//[[Rcpp::export]]
 void concat_rows_split_cols_h5(const StringVector in_h5files,
                                const StringVector in_groupname,
                                const StringVector in_datanames,
@@ -83,23 +172,10 @@ void concat_rows_split_cols_h5(const StringVector in_h5files,
   std::vector<hsize_t> maxdim{tot_rows};
   std::vector<hsize_t> chunkdim{tot_rows/2};
 
-
+  Progress pp(tot_cols*tot_rows, true);
   H5FilePtr file_o =create_or_open_file(o_filename);
-//  Rcpp::Rcout<<"Creating Groups";
-  for(size_t i=0; i<tot_cols;i++){
-    std::string gname(out_groupnames[i]);
-    H5GroupPtr group =create_or_open_group(file_o,gname);
-    for(size_t j=0; j<num_data;j++){
-      H5DataSetPtr dataset =create_or_open_dataset(group,o_datanames[j],ftypew,cumdim,maxdim,chunkdim,1);
-      write_transpose(dataset,false);
-      dataset->close();
-    }
-    group->close();
-  }
-  file_o->flush(H5F_SCOPE_GLOBAL);
   //  file_o->close();
-
-  Progress pp(n_in_files, true);
+  
   // file_o =create_or_open_file(std::string(out_h5file[0]));
   DataSpace* ofdataspace;
   for(size_t i=0; i<n_in_files;i++){
@@ -147,7 +223,9 @@ void concat_rows_split_cols_h5(const StringVector in_h5files,
         const std::string gname(out_groupnames[j]);
 
         const double *trow=&datmap.coeffRef(j,0);
-
+	if(Progress::check_abort()){
+	  Rcpp::stop("Process Aborted");
+	}
 
         //        Rcpp::Rcout<<std::endl<<"Here's a peek at tcol(length is "<<num_snps<<"):"<<std::endl<<Eigen::Map<Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor>>(trow,1,num_snps)<<std::endl;
         H5GroupPtr group_o = open_group(file_o,gname);
