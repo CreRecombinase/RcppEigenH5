@@ -285,11 +285,12 @@ void concat_rows_split_cols_h5(const StringVector in_h5files,
           delete mspace;
           group_o->close();
           delete ofdataspace;
+          pp.increment();
         }
         file_o->flush(H5F_SCOPE_GLOBAL);
         file_o->close();
       }
-      pp.increment();
+
       dataset_i->close();
       dt.close();
       memspace.close();
