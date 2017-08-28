@@ -3,7 +3,11 @@
 
 
 
-H5DataSetPtr create_or_open_dataset(H5GroupPtr &group,const std::string &dataname, const DataType &data_type,std::vector<hsize_t> &cdatadim,std::vector<hsize_t> &mdatadim,std::vector<hsize_t> &chunkdim,const int deflate_level)
+H5DataSetPtr create_or_open_dataset(H5GroupPtr &group,
+                                    const std::string &dataname,
+                                    const DataType &data_type,
+                                    const std::vector<hsize_t> &cdatadim,const std::vector<hsize_t> &mdatadim,
+                                    const std::vector<hsize_t> &chunkdim,const int deflate_level,const bool prealloc)
 {
   H5::Exception::dontPrint();
   DataSet* dataset;
@@ -11,13 +15,10 @@ H5DataSetPtr create_or_open_dataset(H5GroupPtr &group,const std::string &datanam
   hsize_t objc= group->getNumObjs();
 
 
-
-  char* version;
-  char* date;
-  int r=0;
   unsigned int cd_values[7];
+
   if(deflate_level>0){
-    r = register_blosc(&version,&date);
+
 
     //    printf("Blosc version info: %s (%s)\n", version, date);
 
@@ -63,6 +64,10 @@ H5DataSetPtr create_or_open_dataset(H5GroupPtr &group,const std::string &datanam
       Rcpp::stop("Error creating file dataspace");
     }
     DSetCreatPropList cparms; //Create chunksize file parameters
+    if(!prealloc){
+      cparms.setFillTime( H5D_FILL_TIME_NEVER );
+    }
+
     cparms.setChunk(chunkdim.size(),chunkdima); //Set chunksize
     if(deflate_level>0){
       cparms.setFilter(FILTER_BLOSC,H5Z_FLAG_OPTIONAL,7,cd_values);

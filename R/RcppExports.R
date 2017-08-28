@@ -149,12 +149,12 @@ write_mat_chunk_h5 <- function(h5file, groupname, dataname, data, offsets) {
     invisible(.Call('_RcppEigenH5_write_mat_chunk_h5_exp', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, data, offsets))
 }
 
-create_groups_rows_split_cols_h5 <- function(in_h5files, in_groupname, in_datanames, out_h5file, out_groupnames) {
-    invisible(.Call('_RcppEigenH5_create_groups_rows_split_cols_h5', PACKAGE = 'RcppEigenH5', in_h5files, in_groupname, in_datanames, out_h5file, out_groupnames))
+create_groups_rows_split_cols_h5 <- function(in_h5files, in_groupname, in_datanames, out_groupname_list) {
+    invisible(.Call('_RcppEigenH5_create_groups_rows_split_cols_h5', PACKAGE = 'RcppEigenH5', in_h5files, in_groupname, in_datanames, out_groupname_list))
 }
 
-concat_rows_split_cols_h5 <- function(in_h5files, in_groupname, in_datanames, out_h5file, out_groupnames) {
-    invisible(.Call('_RcppEigenH5_concat_rows_split_cols_h5', PACKAGE = 'RcppEigenH5', in_h5files, in_groupname, in_datanames, out_h5file, out_groupnames))
+concat_rows_split_cols_h5 <- function(in_h5files, in_groupname, in_datanames, out_groupname_list) {
+    invisible(.Call('_RcppEigenH5_concat_rows_split_cols_h5', PACKAGE = 'RcppEigenH5', in_h5files, in_groupname, in_datanames, out_groupname_list))
 }
 
 create_mat_dataset_h5 <- function(h5file, groupname, dataname, dims, chunkdims, deflate_level = as.integer( c(0)), doTranspose = FALSE) {

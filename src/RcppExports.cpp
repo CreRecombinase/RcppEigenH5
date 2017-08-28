@@ -2,6 +2,7 @@
 // Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #include "../inst/include/RcppEigenH5.h"
+#include <RcppEigen.h>
 #include <Rcpp.h>
 
 using namespace Rcpp;
@@ -511,30 +512,28 @@ BEGIN_RCPP
 END_RCPP
 }
 // create_groups_rows_split_cols_h5
-void create_groups_rows_split_cols_h5(const StringVector in_h5files, const StringVector in_groupname, const StringVector in_datanames, const StringVector out_h5file, const StringVector out_groupnames);
-RcppExport SEXP _RcppEigenH5_create_groups_rows_split_cols_h5(SEXP in_h5filesSEXP, SEXP in_groupnameSEXP, SEXP in_datanamesSEXP, SEXP out_h5fileSEXP, SEXP out_groupnamesSEXP) {
+void create_groups_rows_split_cols_h5(const StringVector in_h5files, const StringVector in_groupname, const StringVector in_datanames, const List out_groupname_list);
+RcppExport SEXP _RcppEigenH5_create_groups_rows_split_cols_h5(SEXP in_h5filesSEXP, SEXP in_groupnameSEXP, SEXP in_datanamesSEXP, SEXP out_groupname_listSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const StringVector >::type in_h5files(in_h5filesSEXP);
     Rcpp::traits::input_parameter< const StringVector >::type in_groupname(in_groupnameSEXP);
     Rcpp::traits::input_parameter< const StringVector >::type in_datanames(in_datanamesSEXP);
-    Rcpp::traits::input_parameter< const StringVector >::type out_h5file(out_h5fileSEXP);
-    Rcpp::traits::input_parameter< const StringVector >::type out_groupnames(out_groupnamesSEXP);
-    create_groups_rows_split_cols_h5(in_h5files, in_groupname, in_datanames, out_h5file, out_groupnames);
+    Rcpp::traits::input_parameter< const List >::type out_groupname_list(out_groupname_listSEXP);
+    create_groups_rows_split_cols_h5(in_h5files, in_groupname, in_datanames, out_groupname_list);
     return R_NilValue;
 END_RCPP
 }
 // concat_rows_split_cols_h5
-void concat_rows_split_cols_h5(const StringVector in_h5files, const StringVector in_groupname, const StringVector in_datanames, const StringVector out_h5file, const StringVector out_groupnames);
-RcppExport SEXP _RcppEigenH5_concat_rows_split_cols_h5(SEXP in_h5filesSEXP, SEXP in_groupnameSEXP, SEXP in_datanamesSEXP, SEXP out_h5fileSEXP, SEXP out_groupnamesSEXP) {
+void concat_rows_split_cols_h5(const StringVector in_h5files, const StringVector in_groupname, const StringVector in_datanames, const List out_groupname_list);
+RcppExport SEXP _RcppEigenH5_concat_rows_split_cols_h5(SEXP in_h5filesSEXP, SEXP in_groupnameSEXP, SEXP in_datanamesSEXP, SEXP out_groupname_listSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const StringVector >::type in_h5files(in_h5filesSEXP);
     Rcpp::traits::input_parameter< const StringVector >::type in_groupname(in_groupnameSEXP);
     Rcpp::traits::input_parameter< const StringVector >::type in_datanames(in_datanamesSEXP);
-    Rcpp::traits::input_parameter< const StringVector >::type out_h5file(out_h5fileSEXP);
-    Rcpp::traits::input_parameter< const StringVector >::type out_groupnames(out_groupnamesSEXP);
-    concat_rows_split_cols_h5(in_h5files, in_groupname, in_datanames, out_h5file, out_groupnames);
+    Rcpp::traits::input_parameter< const List >::type out_groupname_list(out_groupname_listSEXP);
+    concat_rows_split_cols_h5(in_h5files, in_groupname, in_datanames, out_groupname_list);
     return R_NilValue;
 END_RCPP
 }
@@ -687,8 +686,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_RcppEigenH5_write_data_int_attr_h5_exp", (DL_FUNC) &_RcppEigenH5_write_data_int_attr_h5_exp, 5},
     {"_RcppEigenH5_write_group_int_attr_h5_exp", (DL_FUNC) &_RcppEigenH5_write_group_int_attr_h5_exp, 4},
     {"_RcppEigenH5_write_mat_chunk_h5_exp", (DL_FUNC) &_RcppEigenH5_write_mat_chunk_h5_exp, 5},
-    {"_RcppEigenH5_create_groups_rows_split_cols_h5", (DL_FUNC) &_RcppEigenH5_create_groups_rows_split_cols_h5, 5},
-    {"_RcppEigenH5_concat_rows_split_cols_h5", (DL_FUNC) &_RcppEigenH5_concat_rows_split_cols_h5, 5},
+    {"_RcppEigenH5_create_groups_rows_split_cols_h5", (DL_FUNC) &_RcppEigenH5_create_groups_rows_split_cols_h5, 4},
+    {"_RcppEigenH5_concat_rows_split_cols_h5", (DL_FUNC) &_RcppEigenH5_concat_rows_split_cols_h5, 4},
     {"_RcppEigenH5_create_mat_dataset_h5_exp", (DL_FUNC) &_RcppEigenH5_create_mat_dataset_h5_exp, 7},
     {"_RcppEigenH5_write_mat_h5_exp", (DL_FUNC) &_RcppEigenH5_write_mat_h5_exp, 6},
     {"_RcppEigenH5_write_dvec_h5_exp", (DL_FUNC) &_RcppEigenH5_write_dvec_h5_exp, 5},

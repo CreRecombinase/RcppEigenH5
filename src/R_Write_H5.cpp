@@ -19,22 +19,28 @@ void write_mat_chunk_h5_exp(const StringVector h5file, const StringVector groupn
 
 //[[Rcpp::export]]
 void create_groups_rows_split_cols_h5(const StringVector in_h5files,
-                               const StringVector in_groupname,
-                               const StringVector in_datanames,
-                               const StringVector out_h5file,
-                               const StringVector out_groupnames){
+                                      const StringVector in_groupname,
+                                      const StringVector in_datanames,
+                                      const List out_groupname_list){
 
 
   const std::vector<std::string> i_datanames=Rcpp::as<std::vector<std::string>>(in_datanames);
   const size_t num_data=i_datanames.size();
+  const std::vector<std::string> out_filenames=Rcpp::as<std::vector<std::string> >(out_groupname_list.attr("names"));
+  const size_t num_out_files=out_filenames.size();
+  std::vector<std::vector<std::string> > out_groupnames_l(num_out_files);
+  size_t tot_out_cols=0;
+  for(size_t i=0; i<num_out_files;i++){
+    out_groupnames_l[i]=Rcpp::as<std::vector<std::string> >(out_groupname_list[i]);
+    tot_out_cols+=out_groupnames_l[i].size();
+  }
 
   const size_t n_in_files=in_h5files.size();
   size_t tot_rows=0;
-  const std::string o_filename(out_h5file[0]);
+
   const std::string i_groupname(in_groupname[0]);
-  //  std::string i_dataname(in_dataname[0]);
-  const std::vector<std::string> o_groupnames=Rcpp::as<std::vector<std::string>>(out_groupnames);
-  const std::vector<std::string> o_datanames=i_datanames;
+
+
   std::vector<size_t> tot_cols_v(n_in_files);
   std::vector<size_t> tot_rows_v(n_in_files);
 
@@ -66,42 +72,42 @@ void create_groups_rows_split_cols_h5(const StringVector in_h5files,
   std::partial_sum(tot_rows_v.begin(),tot_rows_v.end()-1,row_offset.begin()+1);
 
 
-  size_t tot_cols=tot_cols_v[0];
-  if(tot_cols!=out_groupnames.size()){
+  const size_t tot_cols=tot_cols_v[0];
+  if(tot_cols!=tot_out_cols){
     Rcpp::stop("Groupnames not the same size as number of columns!");
   }
-//  Progress p(tot_cols, false);
-  std::vector<double> dbuffer(max_rows*tot_cols);
-  std::vector<double> tbuffer(max_rows);
 
+  const FloatType ftypew(PredType::NATIVE_DOUBLE);
 
+  const std::vector<hsize_t> cumdim{tot_rows};
+  const std::vector<hsize_t> maxdim{tot_rows};
+  const std::vector<hsize_t> chunkdim{tot_rows/2};
 
-//  std::vector<size_t> chunk_dims={tot_rows/2,1};
-  FloatType ftypew(PredType::NATIVE_DOUBLE);
-
-  std::vector<hsize_t> cumdim{tot_rows};
-  std::vector<hsize_t> maxdim{tot_rows};
-  std::vector<hsize_t> chunkdim{tot_rows/2};
 
   Progress pp(tot_cols, true);
-  H5FilePtr file_o =create_or_open_file(o_filename);
-//  Rcpp::Rcout<<"Creating Groups";
-  for(size_t i=0; i<tot_cols;i++){
-    if(Progress::check_abort()){
-      Rcpp::stop("Process Aborted");
+  for(size_t i=0; i<num_out_files;i++){
+    const std::vector<std::string> *out_groupnames=&out_groupnames_l[i];
+    const std::string o_filename=out_filenames[i];
+    H5FilePtr file_o =create_or_open_file(o_filename);
+    const size_t num_cols_chunk=out_groupnames->size();
+    for(size_t i=0; i<num_cols_chunk;i++){
+      if(Progress::check_abort()){
+        Rcpp::stop("Process Aborted");
+      }
+      const std::string gname((*out_groupnames)[i]);
+      H5GroupPtr group =create_or_open_group(file_o,gname);
+      for(size_t j=0; j<num_data;j++){
+        const std::string o_dataname=i_datanames[j];
+        H5DataSetPtr dataset =create_or_open_dataset(group,o_dataname,ftypew,cumdim,maxdim,chunkdim,1);
+        write_transpose(dataset,false);
+        dataset->close();
+      }
+      group->close();
+      pp.increment();
     }
-    std::string gname(out_groupnames[i]);
-    H5GroupPtr group =create_or_open_group(file_o,gname);
-    for(size_t j=0; j<num_data;j++){
-      H5DataSetPtr dataset =create_or_open_dataset(group,o_datanames[j],ftypew,cumdim,maxdim,chunkdim,1);
-      write_transpose(dataset,false);
-      dataset->close();
-    }
-    group->close();
-    pp.increment();
+    file_o->flush(H5F_SCOPE_GLOBAL);
+    file_o->close();
   }
-  file_o->flush(H5F_SCOPE_GLOBAL);
-  file_o->close();
 }
 
 
@@ -110,20 +116,25 @@ void create_groups_rows_split_cols_h5(const StringVector in_h5files,
 void concat_rows_split_cols_h5(const StringVector in_h5files,
                                const StringVector in_groupname,
                                const StringVector in_datanames,
-                               const StringVector out_h5file,
-                               const StringVector out_groupnames){
-
+                               const List out_groupname_list){
 
   const std::vector<std::string> i_datanames=Rcpp::as<std::vector<std::string>>(in_datanames);
   const size_t num_data=i_datanames.size();
+  const std::vector<std::string> out_filenames=Rcpp::as<std::vector<std::string> >(out_groupname_list.attr("names"));
+  const size_t num_out_files=out_filenames.size();
+  std::vector<std::vector<std::string> > out_groupnames_l(num_out_files);
+  size_t tot_out_cols=0;
+  for(size_t i=0; i<num_out_files;i++){
+    out_groupnames_l[i]=Rcpp::as<std::vector<std::string> >(out_groupname_list[i]);
+    tot_out_cols+=out_groupnames_l[i].size();
+  }
 
   const size_t n_in_files=in_h5files.size();
   size_t tot_rows=0;
-  const std::string o_filename(out_h5file[0]);
+
   const std::string i_groupname(in_groupname[0]);
-  //  std::string i_dataname(in_dataname[0]);
-  const std::vector<std::string> o_groupnames=Rcpp::as<std::vector<std::string>>(out_groupnames);
-  const std::vector<std::string> o_datanames=i_datanames;
+
+
   std::vector<size_t> tot_cols_v(n_in_files);
   std::vector<size_t> tot_rows_v(n_in_files);
 
@@ -155,27 +166,19 @@ void concat_rows_split_cols_h5(const StringVector in_h5files,
   std::partial_sum(tot_rows_v.begin(),tot_rows_v.end()-1,row_offset.begin()+1);
 
 
-  size_t tot_cols=tot_cols_v[0];
-  if(tot_cols!=out_groupnames.size()){
+  const size_t tot_cols=tot_cols_v[0];
+  if(tot_cols!=tot_out_cols){
     Rcpp::stop("Groupnames not the same size as number of columns!");
   }
-//  Progress p(tot_cols, false);
-  std::vector<double> dbuffer(max_rows*tot_cols);
-  std::vector<double> tbuffer(max_rows);
 
+  const FloatType ftypew(PredType::NATIVE_DOUBLE);
+  std::vector<double> dbuffer;
+  dbuffer.reserve(max_rows*tot_cols);
 
-
-//  std::vector<size_t> chunk_dims={tot_rows/2,1};
-  FloatType ftypew(PredType::NATIVE_DOUBLE);
-
-  std::vector<hsize_t> cumdim{tot_rows};
-  std::vector<hsize_t> maxdim{tot_rows};
-  std::vector<hsize_t> chunkdim{tot_rows/2};
 
   Progress pp(tot_cols*tot_rows, true);
-  H5FilePtr file_o =create_or_open_file(o_filename);
   //  file_o->close();
-  
+
   // file_o =create_or_open_file(std::string(out_h5file[0]));
   DataSpace* ofdataspace;
   for(size_t i=0; i<n_in_files;i++){
@@ -218,61 +221,73 @@ void concat_rows_split_cols_h5(const StringVector in_h5files,
 
       Eigen::Map<Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> > datmap(dbuffer.data(),num_genes,num_snps);
 
-      for(size_t j=0; j<tot_cols;j++){
-        //Remember that data is transposed
-        const std::string gname(out_groupnames[j]);
 
-        const double *trow=&datmap.coeffRef(j,0);
-	if(Progress::check_abort()){
-	  Rcpp::stop("Process Aborted");
-	}
+      size_t gene_iter=0;
+      for(size_t l=0;l<num_out_files;l++){
+        const std::vector<std::string> *out_groupnames=&out_groupnames_l[l];
+        const std::string o_filename=out_filenames[l];
+        H5FilePtr file_o =create_or_open_file(o_filename);
+        const size_t num_cols_chunk=out_groupnames->size();
 
-        //        Rcpp::Rcout<<std::endl<<"Here's a peek at tcol(length is "<<num_snps<<"):"<<std::endl<<Eigen::Map<Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor>>(trow,1,num_snps)<<std::endl;
-        H5GroupPtr group_o = open_group(file_o,gname);
-        H5DataSetPtr dataset_o = open_dataset(group_o,o_datanames[k]);
+        for(size_t j=0; j<num_cols_chunk;j++){
+          //Remember that data is transposed
+          const std::string gname((*out_groupnames)[j]);
+          const double *trow=&datmap.coeffRef(gene_iter,0);
+          gene_iter++;
+          if(Progress::check_abort()){
+            Rcpp::stop("Process Aborted");
+          }
 
-        try{
-          ofdataspace= new DataSpace(dataset_o->getSpace());
-        }catch(DataSpaceIException error){
-          error.printError();
-          Rcpp::stop("Error creating memory dataspace ");
-        }
-        hsize_t datadim[2];
-        ofdataspace->getSimpleExtentDims(datadim,NULL);
-        const hsize_t memdim[]={num_snps};
-        DataSpace *mspace;
-        try{
-          mspace= new DataSpace(1,memdim); //Size of first dataset (in memory, can be bigger or smaller than size on disk, depending on how much you're writing)
-        }catch(DataSpaceIException error){
-          error.printError();
-          Rcpp::stop("Error creating memory dataspace ");
-        }
-        hsize_t row_offset_i=row_offset[i];
+          //        Rcpp::Rcout<<std::endl<<"Here's a peek at tcol(length is "<<num_snps<<"):"<<std::endl<<Eigen::Map<Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor>>(trow,1,num_snps)<<std::endl;
+          H5GroupPtr group_o = open_group(file_o,gname);
 
-        if(row_offset_i+num_snps>datadim[0]){
-          Rcpp::stop("Trying to write off the end of the file!");
-        }
-        //        Rcpp::Rcerr<<"row_offset is :"<<row_offset_i<<std::endl;
-        const hsize_t odim[]={row_offset_i};//dimension of each offset (current_chunk*chunksize)
-        //      Rcpp::Rcerr<<"odim is :"<<odim[0]<<"x"<<odim[1]<<std::endl;
+          H5DataSetPtr dataset_o = open_dataset(group_o,i_datanames[k]);
 
-        ofdataspace->selectHyperslab( H5S_SELECT_SET,memdim,odim);
-        try{
-          dataset_o->write(trow,ftypew,*mspace,*ofdataspace);
-        }  catch( DataSetIException error )
-        {
-          error.printError();
-          Rcpp::stop("Error writing file");
+          try{
+            ofdataspace= new DataSpace(dataset_o->getSpace());
+          }catch(DataSpaceIException error){
+            error.printError();
+            Rcpp::stop("Error creating memory dataspace ");
+          }
+          hsize_t datadim[1];
+          ofdataspace->getSimpleExtentDims(datadim,NULL);
+          const hsize_t memdim[]={num_snps};
+          DataSpace *mspace;
+          try{
+            mspace= new DataSpace(1,memdim); //Size of first dataset (in memory, can be bigger or smaller than size on disk, depending on how much you're writing)
+          }catch(DataSpaceIException error){
+            error.printError();
+            Rcpp::stop("Error creating memory dataspace ");
+          }
+          hsize_t row_offset_i=row_offset[i];
+
+          if(row_offset_i+num_snps>datadim[0]){
+            Rcpp::stop("Trying to write off the end of the file!");
+          }
+          //        Rcpp::Rcerr<<"row_offset is :"<<row_offset_i<<std::endl;
+          const hsize_t odim[]={row_offset_i};//dimension of each offset (current_chunk*chunksize)
+          //      Rcpp::Rcerr<<"odim is :"<<odim[0]<<"x"<<odim[1]<<std::endl;
+
+          ofdataspace->selectHyperslab( H5S_SELECT_SET,memdim,odim);
+          try{
+            dataset_o->write(trow,ftypew,*mspace,*ofdataspace);
+          }  catch( DataSetIException error )
+          {
+            error.printError();
+            Rcpp::stop("Error writing file");
+          }
+          file_o->flush(H5F_SCOPE_GLOBAL);
+
+          //  std::cout<<"File flushed"<<std::endl;
+          dataset_o->close();
+          ofdataspace->close();
+          mspace->close();
+          delete mspace;
+          group_o->close();
+          delete ofdataspace;
         }
         file_o->flush(H5F_SCOPE_GLOBAL);
-
-        //  std::cout<<"File flushed"<<std::endl;
-        dataset_o->close();
-        ofdataspace->close();
-        mspace->close();
-        delete mspace;
-        group_o->close();
-        delete ofdataspace;
+        file_o->close();
       }
       pp.increment();
       dataset_i->close();
@@ -282,10 +297,9 @@ void concat_rows_split_cols_h5(const StringVector in_h5files,
     }
     group_i->close();
     file_i->close();
-
   }
-  file_o->flush(H5F_SCOPE_GLOBAL);
-  file_o->close();
+  // file_o->flush(H5F_SCOPE_GLOBAL);
+  // file_o->close();
 
 
 

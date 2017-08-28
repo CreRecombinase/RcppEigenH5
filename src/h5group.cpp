@@ -133,6 +133,7 @@ H5GroupPtr open_group(const H5FilePtr file,const std::string groupname)
   for( auto subname : groupvec){
     std::vector<std::string> subgrps= subgrp_grp(trg);
     if((std::find(subgrps.begin(), subgrps.end(), subname) == subgrps.end())||subgrps.size()==0){
+      Rcpp::Rcerr<<"Unable to find group "<<groupname<<std::endl;
       Rcpp::stop("Group doesn't exist!");
     }else{
       try{
@@ -140,6 +141,7 @@ H5GroupPtr open_group(const H5FilePtr file,const std::string groupname)
         //        trg = H5GroupPtr(group);
       }catch(GroupIException error){
         error.printError();
+        Rcpp::Rcerr<<"Unable to open group "<<groupname<<std::endl;
         Rcpp::stop("Error opening group");
       }
     }

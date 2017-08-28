@@ -43,19 +43,26 @@ test_that("Crazy hack append function works",{
 
   ncolnames <- as.character(chunk_cols[[1]])
   in_files <- file_mat[,1]
-  outfile <- tempfile()
+  outfile_1 <- tempfile()
+  outfile_2 <- tempfile()
+  outfile_list <-list(ncolnames[1:2],ncolnames[3])
+  names(outfile_list) <-c(outfile_1,outfile_2)
 
-  concat_rows_split_cols_h5(in_h5files = in_files,in_groupname = "test_group",in_dataname = c("test_data","test_data_2"),out_h5file = outfile,out_groupnames = ncolnames)
-  l_col <- read_dvec(outfile,"1","test_data")
+  create_groups_rows_split_cols_h5(in_h5files = in_files,
+                                   in_groupname = c("test_group"),
+                                   in_datanames = c("test_data","test_data_2"),
+                                   out_groupname_list = outfile_list)
+  concat_rows_split_cols_h5(in_h5files = in_files,
+                                   in_groupname = c("test_group"),
+                                   in_datanames = c("test_data","test_data_2"),
+                            out_groupname_list = outfile_list)
+
+  l_col <- read_dvec(outfile_1,"1","test_data")
   expect_equal(c(l_col),test_mat[,chunk_cols[[1]]][,1])
-
-all_cols <- lapply(ncolnames,function(x){read_dvec(outfile,groupname = x,dataname = "test_data")})
-all_cols_2 <- lapply(ncolnames,function(x){read_dvec(outfile,groupname = x,dataname = "test_data_2")})
-omat <- do.call("cbind",all_cols)
-omat_2 <- do.call("cbind",all_cols_2)
-expect_equal(omat,test_mat[,chunk_cols[[1]]])
-expect_equal(omat_2,test_mat_2[,chunk_cols[[1]]])
-
+  imats <- do.call("cbind",imap(outfile_list,function(x,i){lapply(x,read_dvec,h5file=i,dataname="test_data")}) %>% map(function(x)do.call("cbind",x)))
+  imats_2 <- do.call("cbind",imap(outfile_list,function(x,i){lapply(x,read_dvec,h5file=i,dataname="test_data_2")}) %>% map(function(x)do.call("cbind",x)))
+  expect_equal(imats,test_mat[,1:3])
+  expect_equal(imats_2,test_mat_2[,1:3])
 })
 
 #

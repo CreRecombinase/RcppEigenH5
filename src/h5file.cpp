@@ -17,6 +17,13 @@ bool f_exists (const std::string name) {
 H5FilePtr create_or_open_file(const std::string fname)
 {
   H5::H5File* file;
+
+#ifdef BLOSC_BLOSCLZ
+  char* version;
+  char* date;  int r=0;
+  r = register_blosc(&version,&date);
+#endif
+
 //  bool fe = file_exists(fname);
   if(!f_exists(fname)){
     try{
@@ -40,6 +47,14 @@ H5FilePtr create_or_open_file(const std::string fname)
 H5FilePtr open_file(const std::string fname)
 {
   H5::H5File* file;
+
+#ifdef BLOSC_BLOSCLZ
+  char* version;
+  char* date;  int r=0;
+  r = register_blosc(&version,&date);
+#endif
+
+
   if(!f_exists(fname)){
     Rcpp::stop("File does not exist!");
   }
