@@ -1,24 +1,25 @@
 context("h5 compatability")
 # #
-# test_that("calcAF works as expected",{
-#   test_mat <-matrix(runif(9*8),9,8)
-#   test_means <- colMeans(test_mat)/2
-#   tfile <- tempfile()
-#   write_mat_h5(tfile,"test","geno",data=test_mat)
-#   sub_i <- c(1,3,5,7)
-#   sub_means <- calc_af(tfile,"test","geno",index = sub_i,chunksize = 2,check_dup = F)
-#   expect_equal(test_means[sub_i],sub_means)
-#   sub_i <- c(1:8)
-#   sub_means <- calc_af(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
-#   tmi <- test_mat
-#   tmi[] <- as.integer(tmi)
-#   tmd <- duplicated(tmi,MARGIN = 2)
-#   test_means[tmd] <- 0
-#   expect_equal(test_means[sub_i],sub_means)
-#   sub_means<-calc_af(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
-#   expect_equal(test_means[sub_i],sub_means)
-#
-# })
+test_that("calcAF works as expected",{
+  test_mat <-matrix(runif(9*8),9,8)
+  test_means <- colMeans(test_mat)/2
+  tfile <- tempfile()
+  write_mat_h5(tfile,"test","geno",data=test_mat)
+  sub_i <- c(1,3,5,7)
+  sub_means <- calc_af(tfile,"test","geno",index = sub_i,chunksize = 2,check_dup = F)
+  expect_equal(test_means[sub_i],sub_means)
+  sub_i <- c(1:8)
+  sub_means <- calc_af(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
+  tmi <- test_mat
+  #  tmi[] <- sample(0:1,9*8,replace = T)
+  #  tmd <- duplicated(tmi,MARGIN = 2)
+  #
+  # # test_means[tmd] <- 0
+  # # expect_equal(test_means[sub_i],sub_means)
+  # # sub_means<-calc_af(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
+  # # expect_equal(test_means[sub_i],sub_means)
+
+})
 
 test_that("Crazy hack append function works",{
   n_row <- 15
@@ -53,8 +54,8 @@ test_that("Crazy hack append function works",{
                                    in_datanames = c("test_data","test_data_2"),
                                    out_groupname_list = outfile_list)
   concat_rows_split_cols_h5(in_h5files = in_files,
-                                   in_groupname = c("test_group"),
-                                   in_datanames = c("test_data","test_data_2"),
+                            in_groupname = c("test_group"),
+                            in_datanames = c("test_data","test_data_2"),
                             out_groupname_list = outfile_list)
 
   l_col <- read_dvec(outfile_1,"1","test_data")
@@ -63,7 +64,21 @@ test_that("Crazy hack append function works",{
   imats_2 <- do.call("cbind",imap(outfile_list,function(x,i){lapply(x,read_dvec,h5file=i,dataname="test_data_2")}) %>% map(function(x)do.call("cbind",x)))
   expect_equal(imats,test_mat[,1:3])
   expect_equal(imats_2,test_mat_2[,1:3])
+
+  bdf <- expand.grid(c(1:100),c(1:100,1:100))
+  b_ornot <- function(a,b){
+    return(bitwOr(a,bitwNot(b)))
+  }
+
+  morn <- map2_int(bdf$Var1,bdf$Var2,b_ornot)
+  rorn <- map2_int(bdf$Var1,bdf$Var2,bitwXor)
+  expect_equal(morn,rorn)
+
+
 })
+
+
+
 
 #
 # test_that("calc_summ_h5 works as expected (without duplicates)",{

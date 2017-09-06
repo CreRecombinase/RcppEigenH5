@@ -1,6 +1,7 @@
 #include "RcppEigenH5.h"
-
 // [[Rcpp::depends(RcppProgress)]]
+// [[Rcpp::depends(RcppParallel)]]
+#include <RcppParallel.h>
 #include <progress.hpp>
 
 //[[Rcpp::depends(RcppEigen)]]
@@ -16,6 +17,196 @@ void write_mat_chunk_h5_exp(const StringVector h5file, const StringVector groupn
   write_mat_chunk_h5(h5fn,gname,dname,data,offset);
 }
 
+
+
+
+class PReader: public Worker
+{
+  std::vector<RMatrix<double>> input;
+  std::vector<int> snp_offsets;
+  std::vector<int> gene_offsets;
+  const std::vector<std::vector<std::string>> *in_filenames_l;
+  const std::vector<std::vector<size_t>> *chunk_rows; 
+  const std::vector<std::string> *out_filenames;
+  const std::vector<std::string> *out_datanames;
+  const size_t num_snps;
+  const size_t num_genes;
+  const size_t row_offset;
+private:
+  std::vector<RMatrix<double>> createInput(std::vector<NumericMatrix> &inp){
+    const size_t num_el=inp.size();
+    std::vector<RMatrix<double>> retvec(num_el);
+    
+    for(size_t i=0; i<num_el;i++){
+      retvec[i]=RMatrix<double>(inp[i]);
+    }
+    return(retvec);
+  }
+  PWriter(const NumericMatrix &input_,
+	  const std::vector<std::vector<std::string>> &out_groupnames_l_,
+	  const std::vector<std::vector<size_t>> &chunk_rows_; 
+	  const std::vector<std::string> &out_filenames_,
+	  const std::vector<std::string> &out_datanames_,
+	  const size_t row_offset_,
+	  const size_t num_snps_,
+	  const size_t num_genes_): input(createInput(input_)),
+				    out_groupnames_l(out_groupnames_l_),
+				    chunk_rows(chunk_rows_),
+				    out_filenames(out_filenames_),
+				    out_datanames(out_datanames),
+				    row_offset(row_offset_),
+				    num_snps(num_snps_),
+				    num_genes(num_genes_){}
+  
+  void operator()(std::size_t begin, std::size_t end){
+    const size_t num_data=out_datanames.size();
+    const FloatType ftypew(PredType::NATIVE_DOUBLE);
+    for(size_t i=begin; i<end;i++){
+      
+      const std::vector<size_t> chunk_r=(*chunk_rows)[i];
+      const std::vector<std::string> chunk_groupnames= (*out_groupnames_l)[i];
+      const std::string o_filename=(*out_filenames)[i];
+      const size_t num_groups=chunk_groupnames.size();
+      
+      H5FilePtr file_o =create_or_open_file(o_filename);
+      for(size_t j=0;j<num_groups;j++){
+	const std::string gname_o=chunk_groupnames[j];
+	const size_t trownum=chunk_r[j];
+	H5GroupPtr group_o = open_group(file_o,i_groupname);
+	for(size_t k=0; k<num_data;k++){
+	  const std::string o_dataname=o_datanames[k];
+	  RMatrix<double>::Col tcol=(*input)[k].col(trownum);
+	  const double *datar=&tcol.begin();
+	  H5DataSetPtr dataset_o = open_dataset(group_o,o_dataname);
+	  
+	  DataSpace ofdataspace(dataset_o->getSpace());
+	  
+          hsize_t datadim[1];
+          ofdataspace.getSimpleExtentDims(datadim,NULL);
+          const hsize_t memdim[]={num_snps};
+          DataSpace mspace(1,memdim);
+          if(row_offset+num_snps>datadim[0]){
+            Rcpp::stop("Trying to write off the end of the file!");
+          }
+          //        Rcpp::Rcerr<<"row_offset is :"<<row_offset_i<<std::endl;
+          const hsize_t odim[]={row_offset};//dimension of each offset (current_chunk*chunksize)
+          //      Rcpp::Rcerr<<"odim is :"<<odim[0]<<"x"<<odim[1]<<std::endl;
+	  
+          ofdataspace.selectHyperslab( H5S_SELECT_SET,memdim,odim);
+          try{
+            dataset_o->write(datar,ftypew,mspace,ofdataspace);
+          }  catch( DataSetIException error )
+	    {
+	      error.printError();
+	      Rcpp::stop("Error writing file");
+	    }
+	  //   file_o->flush(H5F_SCOPE_GLOBAL);
+          dataset_o->close();
+	  ofdataspace->close();
+	  mspace->close();
+	}
+	group_o->close();
+      }
+      file_o.close();
+    }
+  }
+}
+
+
+
+using namespace RcppParallel;
+
+class PWriter: public Worker
+{
+  const std::vector<RMatrix<double>> input;
+  const std::vector<std::vector<std::string>> *out_groupnames_l;
+  const std::vector<std::vector<size_t>> *chunk_rows; 
+  const std::vector<std::string> *out_filenames;
+  const std::vector<std::string> *out_datanames;
+  const size_t num_snps;
+  const size_t num_genes;
+  const size_t row_offset;
+private:
+  std::vector<RMatrix<double>> createInput(std::vector<NumericMatrix> &inp){
+    const size_t num_el=inp.size();
+    std::vector<RMatrix<double>> retvec(num_el);
+    
+    for(size_t i=0; i<num_el;i++){
+      retvec[i]=RMatrix<double>(inp[i]);
+    }
+    return(retvec);
+  }
+  PWriter(const NumericMatrix &input_,
+	  const std::vector<std::vector<std::string>> &out_groupnames_l_,
+	  const std::vector<std::vector<size_t>> &chunk_rows_; 
+	  const std::vector<std::string> &out_filenames_,
+	  const std::vector<std::string> &out_datanames_,
+	  const size_t row_offset_,
+	  const size_t num_snps_,
+	  const size_t num_genes_): input(createInput(input_)),
+				    out_groupnames_l(out_groupnames_l_),
+				    chunk_rows(chunk_rows_),
+				    out_filenames(out_filenames_),
+				    out_datanames(out_datanames),
+				    row_offset(row_offset_),
+				    num_snps(num_snps_),
+				    num_genes(num_genes_){}
+  
+  void operator()(std::size_t begin, std::size_t end){
+    const size_t num_data=out_datanames.size();
+    const FloatType ftypew(PredType::NATIVE_DOUBLE);
+    for(size_t i=begin; i<end;i++){
+      
+      const std::vector<size_t> chunk_r=(*chunk_rows)[i];
+      const std::vector<std::string> chunk_groupnames= (*out_groupnames_l)[i];
+      const std::string o_filename=(*out_filenames)[i];
+      const size_t num_groups=chunk_groupnames.size();
+      
+      H5FilePtr file_o =create_or_open_file(o_filename);
+      for(size_t j=0;j<num_groups;j++){
+	const std::string gname_o=chunk_groupnames[j];
+	const size_t trownum=chunk_r[j];
+	H5GroupPtr group_o = open_group(file_o,i_groupname);
+	for(size_t k=0; k<num_data;k++){
+	  const std::string o_dataname=o_datanames[k];
+	  RMatrix<double>::Col tcol=(*input)[k].col(trownum);
+	  const double *datar=&tcol.begin();
+	  H5DataSetPtr dataset_o = open_dataset(group_o,o_dataname);
+	  
+	  DataSpace ofdataspace(dataset_o->getSpace());
+	  
+          hsize_t datadim[1];
+          ofdataspace.getSimpleExtentDims(datadim,NULL);
+          const hsize_t memdim[]={num_snps};
+          DataSpace mspace(1,memdim);
+          if(row_offset+num_snps>datadim[0]){
+            Rcpp::stop("Trying to write off the end of the file!");
+          }
+          //        Rcpp::Rcerr<<"row_offset is :"<<row_offset_i<<std::endl;
+          const hsize_t odim[]={row_offset};//dimension of each offset (current_chunk*chunksize)
+          //      Rcpp::Rcerr<<"odim is :"<<odim[0]<<"x"<<odim[1]<<std::endl;
+	  
+          ofdataspace.selectHyperslab( H5S_SELECT_SET,memdim,odim);
+          try{
+            dataset_o->write(datar,ftypew,mspace,ofdataspace);
+          }  catch( DataSetIException error )
+	    {
+	      error.printError();
+	      Rcpp::stop("Error writing file");
+	    }
+	  //   file_o->flush(H5F_SCOPE_GLOBAL);
+          dataset_o->close();
+	  ofdataspace->close();
+	  mspace->close();
+	}
+	group_o->close();
+      }
+      file_o.close();
+    }
+  }
+}
+	  
+  
 
 //[[Rcpp::export]]
 void create_groups_rows_split_cols_h5(const StringVector in_h5files,
@@ -172,8 +363,11 @@ void concat_rows_split_cols_h5(const StringVector in_h5files,
   }
 
   const FloatType ftypew(PredType::NATIVE_DOUBLE);
-  std::vector<double> dbuffer;
-  dbuffer.reserve(max_rows*tot_cols);
+  std::vector<Rcpp::NumericMatrix> mat_vec(num_data);
+  for(size_t i=0; i<num_data;i++){
+    mat_vec[i]=Rcpp::NumericMatrix(tot_cols,max_rows);
+  }
+  
 
 
   Progress pp(tot_cols*tot_rows, true);
@@ -187,7 +381,7 @@ void concat_rows_split_cols_h5(const StringVector in_h5files,
 //so that means the number of genes is the first dimension (on disk)
     const size_t num_snps=tot_rows_v[i];
     const size_t num_genes=tot_cols;
-    dbuffer.resize(num_snps*num_genes);
+    //    dbuffer.resize(num_snps*num_genes);
     H5FilePtr file_i =open_file(std::string(in_h5files[i]));
     H5GroupPtr group_i = open_group(file_i,i_groupname);
     const hsize_t matrix_dims[]={num_genes,num_snps};
@@ -198,6 +392,7 @@ void concat_rows_split_cols_h5(const StringVector in_h5files,
       if(!isTranspose){
         Rcpp::stop("Not transposed data interface hasn't been implemented yet(sorry)");
       }
+      double *dbuffer=(mat_vec[k]).begin();
 
       DataType dt= dataset_i->getDataType();
       hsize_t datadims[]={0,0};
