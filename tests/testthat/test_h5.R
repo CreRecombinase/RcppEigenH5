@@ -21,89 +21,9 @@ test_that("calcAF works as expected",{
 
 })
 
-test_that("Crazy hack append function works",{
-  n_row <- 15
-  n_col <- 6
-  row_chunks <- 5
-  col_chunks <- 3
-  test_mat <-matrix(as.numeric(1:(n_row*n_col)),n_row,n_col)
-  test_mat_2 <-matrix(rev(as.numeric(1:(n_row*n_col))),n_row,n_col)
-  chunk_rows <- BBmisc::chunk(1:n_row,chunk.size = row_chunks)
-  chunk_cols <- BBmisc::chunk(1:n_col,chunk.size=col_chunks)
-
-  file_mat <- matrix(replicate(length(chunk_rows)*length(chunk_cols),tempfile()),length(chunk_rows),length(chunk_cols))
-  for(i in 1:length(chunk_rows)){
-    for(j in 1:length(chunk_cols)){
-      sub_mat <-test_mat[chunk_rows[[i]],chunk_cols[[j]]]
-      sub_mat_2 <-test_mat_2[chunk_rows[[i]],chunk_cols[[j]]]
-      stopifnot(all(sub_mat!=0))
-      write_mat_h5(h5file = file_mat[i,j],groupname="test_group",dataname="test_data",data=sub_mat,deflate_level = 2,doTranspose = T)
-      write_mat_h5(h5file = file_mat[i,j],groupname="test_group",dataname="test_data_2",data=sub_mat_2,deflate_level = 2,doTranspose = T)
-    }
-  }
-
-  ncolnames <- as.character(chunk_cols[[1]])
-  in_files <- file_mat[,1]
-  outfile_1 <- tempfile()
-  outfile_2 <- tempfile()
-  outfile_list <-list(ncolnames[1:2],ncolnames[3])
-  names(outfile_list) <-c(outfile_1,outfile_2)
-
-  create_groups_rows_split_cols_h5(in_h5files = in_files,
-                                   in_groupname = c("test_group"),
-                                   in_datanames = c("test_data","test_data_2"),
-                                   out_groupname_list = outfile_list)
-  concat_rows_split_cols_h5(in_h5files = in_files,
-                            in_groupname = c("test_group"),
-                            in_datanames = c("test_data","test_data_2"),
-                            out_groupname_list = outfile_list)
-
-  l_col <- read_dvec(outfile_1,"1","test_data")
-  expect_equal(c(l_col),test_mat[,chunk_cols[[1]]][,1])
-  imats <- do.call("cbind",imap(outfile_list,function(x,i){lapply(x,read_dvec,h5file=i,dataname="test_data")}) %>% map(function(x)do.call("cbind",x)))
-  imats_2 <- do.call("cbind",imap(outfile_list,function(x,i){lapply(x,read_dvec,h5file=i,dataname="test_data_2")}) %>% map(function(x)do.call("cbind",x)))
-  expect_equal(imats,test_mat[,1:3])
-  expect_equal(imats_2,test_mat_2[,1:3])
-
-  bdf <- expand.grid(c(1:100),c(1:100,1:100))
-  b_ornot <- function(a,b){
-    return(bitwOr(a,bitwNot(b)))
-  }
-
-  morn <- map2_int(bdf$Var1,bdf$Var2,b_ornot)
-  rorn <- map2_int(bdf$Var1,bdf$Var2,bitwXor)
-  expect_equal(morn,rorn)
-
-
-})
 
 
 
-
-#
-# test_that("calc_summ_h5 works as expected (without duplicates)",{
-#   test_mat <-matrix(runif(9*8),9,8)
-#   test_means <- colMeans(test_mat)/2
-#   test_mins <- apply(test_mat,2,min)
-#   test_maxs <- apply(test_mat,2,max)
-#   dups <-duplicated(test_mat,MARGIN = 2)
-#   tfile <- tempfile()
-#   write_mat_h5(tfile,"test","geno",data=test_mat)
-#   sub_i <- c(1,3,5,7)
-#   sub_summ <- calc_summ_h5(tfile,"test","geno",index = sub_i,chunksize = 2,check_dup = F)
-#   test_df <- data.frame(af=test_means[sub_i],min=test_mins[sub_i],max=test_maxs[sub_i],isDup=dups[sub_i],index=sub_i)
-#   expect_equal(test_df,sub_summ)
-#   sub_i <- c(1:8)
-#   sub_summ <- calc_summ_h5(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
-#   tmi <- test_mat
-#   tmi[] <- as.integer(tmi)
-#   tmd <- duplicated(tmi,MARGIN = 2)
-#   test_means[tmd] <- 0
-#   expect_equal(test_means[sub_i],sub_means)
-#   sub_means<-calc_af(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
-#   expect_equal(test_means[sub_i],sub_means)
-#
-# })
 
 
 
@@ -121,24 +41,6 @@ test_that("calcvar works as expected",{
 
 })
 
-
-# test_that("calcAF works as expected",{
-#   test_mat <-matrix(1:(9*8)+0.0,9,8)
-#
-#   tfile <- tempfile()
-#   write_mat_h5(tfile,"test","geno",data=test_mat)
-#   write_mat_wrong_h5(tfile,"test","genoW",data=test_mat)
-#
-#   mat_wright_rright <- read_2d_mat_h5(tfile,"test","geno")
-#   expect_equal(mat_wright_rright,test_mat)
-#   mat_wwrong_rwrong <- read_mat_wrong_h5(tfile,"test","genoW",offset = as.integer(c(0,0)),chunksize = as.integer(c(9,8)))
-#   sub_mat_wmat <-read_mat_wrong_h5(tfile,"test","genoW",offset = c(1,1),chunksize=as.integer(c(8,7)))
-#   expect_equal(mat_wwrong_rwrong,test_mat)
-#   tsm <- test_mat[2:9,2:8]
-#   expect_equal(test_mat[2:9,2:8],sub_mat_wmat)
-# })
-
-#
 test_that("calc_yh works as expected",{
   n <- 9
   p <- 8
@@ -206,7 +108,7 @@ test_that("matrices written and read from h5 reads the same with RcppEigenH5",{
 })
 
 
-test_that("matrices written from h5 and RcppEigenH5  read the same (by RcppEigenH5)",{
+test_that("matrices written by  RcppEigenH5 is read back the same (by RcppEigenH5)",{
   # library(h5)
   n <- 4L
   p <- 3L
@@ -217,30 +119,62 @@ test_that("matrices written from h5 and RcppEigenH5  read the same (by RcppEigen
   # h5close(th5f)
   tf2 <- tempfile()
   write_mat_h5(tf2,"/","test",test_mat)
-  write_mat_h5(tf2,"/","test_T",test_mat,deflate_level = 4,doTransopse = T)
+  write_mat_h5(tf2,"/","test_T",test_mat,deflate_level = 4L,doTranspose = T)
   # read_mat <- read_2d_h5(tfile,"/","test",c(0L,0L),c(9L,8L))
   read_mat_2 <-read_2d_h5(tf2,"/","test",c(0L,0L),c(n,p))
   read_mat_t <-read_2d_h5(tf2,"/","test_T",c(0L,0L),c(n,p))
   expect_equal(test_mat,read_mat_2)
 })
 
-test_that("numeric vectors written from h5 and RcppEigenH5  are read the same (by RcppEigenH5)",{
-  library(h5)
+test_that("numeric vectors written from RcppEigenH5 are read the same (by RcppEigenH5)",{
   test_fvec <-runif(9*8)
   test_ivec <- sample(1:100,80)
-  # tfile <- tempfile()
-  # th5f <- h5file(tfile,'a')
-  # th5f['test'] <- test_mat
-  # h5close(th5f)
+
   tf2 <- tempfile()
   write_dvec_h5(tf2,"/","testf",test_fvec)
   write_ivec_h5(tf2,"/","testi",test_ivec)
+
+  write_dvec_h5(tf2,"test1","testf",test_fvec)
+  write_ivec_h5(tf2,"test1","testi",test_ivec)
+
+
+
 
   read_fvec <- read_dvec(tf2,"/","testf")
   read_ivec <- read_ivec(tf2,"/","testi")
   expect_equal(read_fvec,test_fvec)
   expect_equal(read_ivec,test_ivec)
 })
+
+
+test_that("list.datasets(h5) works just like h5ls (RcppEigenH5)",{
+  test_fvec <-runif(9*8)
+  test_ivec <- sample(1:100,80)
+
+  tf2 <- tempfile()
+  write_dvec_h5(tf2,"/","testf",test_fvec)
+  write_ivec_h5(tf2,"/","testi",test_ivec)
+
+  write_dvec_h5(tf2,"test1","testf",test_fvec)
+  write_ivec_h5(tf2,"test1","testi",test_ivec)
+
+  tf <- h5::h5file(tf2,mode="a")
+  ld <- h5::list.datasets(tf)
+  rld <- h5ls(tf2)
+  expect_equal(ld,rld)
+
+  ld <- list.datasets(tf,"test1")
+  rld <- h5ls(tf2,"test1")
+  expect_equal(ld,rld)
+
+
+
+  read_fvec <- read_dvec(tf2,"/","testf")
+  read_ivec <- read_ivec(tf2,"/","testi")
+  expect_equal(read_fvec,test_fvec)
+  expect_equal(read_ivec,test_ivec)
+})
+
 
 
 test_that("string vectors written from h5 are read the same (by RcppEigenH5)",{
@@ -254,6 +188,8 @@ test_that("string vectors written from h5 are read the same (by RcppEigenH5)",{
   r_tessvec <- read_svec(tfile,"/","test")
   expect_equal(r_tessvec,tessvec)
 })
+
+
 
 
 

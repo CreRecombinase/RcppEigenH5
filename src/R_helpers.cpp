@@ -29,9 +29,12 @@ Rcpp::StringVector h5ls(std::string h5file,std::string base_groupname="/"){
   H5FilePtr tf=open_file(h5file);
 
   H5GroupPtr grp = open_group(tf,base_groupname);
+  if(base_groupname!="/"){
+    base_groupname=base_groupname+"/";
+  }
   Rcpp::StringVector retstring = Rcpp::wrap(h5_ls_dset(grp,base_groupname));
-  return(retstring);
 
+  return(retstring);
 }
 
 

@@ -123,7 +123,7 @@ H5GroupPtr create_or_open_group(H5FilePtr file,const std::string groupname)
 H5GroupPtr open_group(const H5FilePtr file,const std::string groupname)
 {
   H5GroupPtr trg =std::make_shared<Group>(file->openGroup("/"));
-  if(groupname=="/"){
+  if((groupname=="/")||(groupname=="")){
     return trg;
   }
   std::vector<std::string> groupvec=split_string(groupname,'/');

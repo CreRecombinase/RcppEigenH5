@@ -3,3 +3,7 @@
 .RData
 .Ruserdata
 src/*.o
+src/*.so
+src/compile_commands.json
+compile_commands.json
+.dir_locals.el

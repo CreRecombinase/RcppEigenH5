@@ -17,5 +17,11 @@
 #include "rcppeigenh5/attributes.h"
 
 
+#include "rcppeigenh5/highfive/H5File.hpp"
+#include "rcppeigenh5/highfive/H5DataSet.hpp"
+#include "rcppeigenh5/highfive/H5DataSpace.hpp"
+#include "rcppeigenh5/highfive/H5Group.hpp"
+// #include "rcppeigenh5/highfive/H5Utility.hpp"
+
 
 #endif
