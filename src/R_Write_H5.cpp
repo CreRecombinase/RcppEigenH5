@@ -137,8 +137,11 @@ void write_svec_h5_exp(const StringVector h5file, const StringVector groupname, 
   std::string tgroupname(groupname[0]);
   std::string tdataname(dataname[0]);
   std::vector<std::string> sdata=Rcpp::as<std::vector<std::string> >(data);
+  const bool hfile_exists =f_exists(th5file);
 
-  HighFive::File file(th5file,HighFive::File::ReadWrite | HighFive::File::Create | HighFive::File::Truncate);
+  auto writers_type = hfile_exists ? HighFive::File::ReadWrite : HighFive::File::ReadWrite |  HighFive::File::Create;
+
+  HighFive::File file(th5file,writers_type);
 
 
   if(!file.exist(tgroupname)){
