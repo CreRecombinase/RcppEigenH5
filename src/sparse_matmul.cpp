@@ -84,7 +84,7 @@ Rcpp::NumericMatrix concat_mat_chunks(StringVector h5files, StringVector groupna
     for(size_t i=0;i<tfilenames.size();i++){
       const bool hfile_exists =f_exists(tfilenames[i]);
       rowsize_vec[i]=get_rownum_h5(tfilenames[i],tgroupnames[i],tdatanames[i]);
-      colsize_vec[i]=get_rownum_h5(tfilenames[i],tgroupnames[i],tdatanames[i]);
+      colsize_vec[i]=get_colnum_h5(tfilenames[i],tgroupnames[i],tdatanames[i]);
       if(!hfile_exists){
         Rcpp::Rcerr<<"Missing file: "<<tfilenames[i]<<std::endl;
         Rcpp::stop("file does not exist!");
