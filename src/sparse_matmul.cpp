@@ -92,7 +92,7 @@ Rcpp::NumericMatrix concat_mat_chunks(StringVector h5files, StringVector groupna
     }
     size_t rows= std::accumulate(rowsize_vec.begin(),rowsize_vec.end(),0);
     size_t cols=colsize_vec[0];
-    if (std::adjacent_find( colsize_vec.begin(), colsize_vec.end(), std::not_equal_to<int>() ) == colsize_vec.end() )
+    if ( std::adjacent_find( colsize_vec.begin(), colsize_vec.end(), std::not_equal_to<int>() ) != colsize_vec.end() )
     {
       Rcpp::stop("All matrices do not have the same number of columns");
     }
