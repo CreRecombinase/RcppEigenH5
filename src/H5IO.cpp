@@ -1,7 +1,11 @@
 #include "RcppEigenH5.h"
+//[[Rcpp::depends(BH)]]
+#include <boost/multi_array.hpp>
 #include <type_traits>
+
 //[[Rcpp::depends(RcppEigen)]]
 using namespace Eigen;
+
 
 
 
@@ -182,6 +186,24 @@ Eigen::MatrixXd read_2d_h5(const std::string h5file, const std::string groupname
   Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::ColMajor> retmat=readmat;
   return(retmat);
 }
+
+//[[Rcpp::export]]
+Eigen::MatrixXd read_2d_boost_h5(std::string h5file, std::string groupname, std::string dataname){
+  using namespace HighFive;
+  int row_offset=0;
+  int col_offset=0;
+  int row_chunksize=get_rownum_h5(h5file,groupname,dataname);
+  int col_chunksize=get_colnum_h5(h5file,groupname,dataname);
+  File file(h5file, File::ReadOnly);
+  int tot_size = row_chunksize*col_chunksize;
+  boost::multi_array<double, 2> my_array(boost::extents[row_chunksize][col_chunksize]);
+  HighFive::DataSet dataset = file.getDataSet(groupname+"/"+dataname);
+  dataset.read(my_array);
+  Eigen::Map<Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor>> readmat(my_array.data(),row_chunksize,col_chunksize);
+  Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::ColMajor> retmat=readmat;
+  return(retmat);
+}
+
 
 Eigen::MatrixXd read_2d_h5(const std::string h5file, const std::string groupname, const std::string dataname){
 

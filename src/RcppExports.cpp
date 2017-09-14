@@ -7,6 +7,19 @@
 
 using namespace Rcpp;
 
+// read_2d_boost_h5
+Eigen::MatrixXd read_2d_boost_h5(std::string h5file, std::string groupname, std::string dataname);
+RcppExport SEXP _RcppEigenH5_read_2d_boost_h5(SEXP h5fileSEXP, SEXP groupnameSEXP, SEXP datanameSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type h5file(h5fileSEXP);
+    Rcpp::traits::input_parameter< std::string >::type groupname(groupnameSEXP);
+    Rcpp::traits::input_parameter< std::string >::type dataname(datanameSEXP);
+    rcpp_result_gen = Rcpp::wrap(read_2d_boost_h5(h5file, groupname, dataname));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpsplit
 std::vector<std::string> rcpsplit(const std::string s, const std::string delim);
 RcppExport SEXP _RcppEigenH5_rcpsplit(SEXP sSEXP, SEXP delimSEXP) {
@@ -635,8 +648,37 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// sparse_matmul
+Rcpp::NumericMatrix sparse_matmul(StringVector h5files, StringVector groupnames, StringVector datanames, Rcpp::NumericMatrix& xmat, bool do_transpose);
+RcppExport SEXP _RcppEigenH5_sparse_matmul(SEXP h5filesSEXP, SEXP groupnamesSEXP, SEXP datanamesSEXP, SEXP xmatSEXP, SEXP do_transposeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< StringVector >::type h5files(h5filesSEXP);
+    Rcpp::traits::input_parameter< StringVector >::type groupnames(groupnamesSEXP);
+    Rcpp::traits::input_parameter< StringVector >::type datanames(datanamesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix& >::type xmat(xmatSEXP);
+    Rcpp::traits::input_parameter< bool >::type do_transpose(do_transposeSEXP);
+    rcpp_result_gen = Rcpp::wrap(sparse_matmul(h5files, groupnames, datanames, xmat, do_transpose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// concat_mat_chunks
+Rcpp::NumericMatrix concat_mat_chunks(StringVector h5files, StringVector groupnames, StringVector datanames);
+RcppExport SEXP _RcppEigenH5_concat_mat_chunks(SEXP h5filesSEXP, SEXP groupnamesSEXP, SEXP datanamesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< StringVector >::type h5files(h5filesSEXP);
+    Rcpp::traits::input_parameter< StringVector >::type groupnames(groupnamesSEXP);
+    Rcpp::traits::input_parameter< StringVector >::type datanames(datanamesSEXP);
+    rcpp_result_gen = Rcpp::wrap(concat_mat_chunks(h5files, groupnames, datanames));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_RcppEigenH5_read_2d_boost_h5", (DL_FUNC) &_RcppEigenH5_read_2d_boost_h5, 3},
     {"_RcppEigenH5_rcpsplit", (DL_FUNC) &_RcppEigenH5_rcpsplit, 2},
     {"_RcppEigenH5_read_2d_h5_exp", (DL_FUNC) &_RcppEigenH5_read_2d_h5_exp, 5},
     {"_RcppEigenH5_read_1d_h5", (DL_FUNC) &_RcppEigenH5_read_1d_h5, 5},
@@ -683,6 +725,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_RcppEigenH5_file_colnum", (DL_FUNC) &_RcppEigenH5_file_colnum, 1},
     {"_RcppEigenH5_read_haps_exp", (DL_FUNC) &_RcppEigenH5_read_haps_exp, 3},
     {"_RcppEigenH5_write_haps_h5", (DL_FUNC) &_RcppEigenH5_write_haps_h5, 7},
+    {"_RcppEigenH5_sparse_matmul", (DL_FUNC) &_RcppEigenH5_sparse_matmul, 5},
+    {"_RcppEigenH5_concat_mat_chunks", (DL_FUNC) &_RcppEigenH5_concat_mat_chunks, 3},
     {NULL, NULL, 0}
 };
 
