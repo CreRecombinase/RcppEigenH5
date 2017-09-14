@@ -115,9 +115,11 @@ void read_2ddmat_h5(const std::string h5file, const std::string groupname, const
   //  std::cout<<"Full data is of dimensions"<<datadims[0]<<"x"<<datadims[1]<<std::endl;
   hsize_t matrix_dims[2];
   if(row_offset+row_chunksize>datadims[0]){
+    Rcpp::Rcerr<<"In file: "<<h5file<<" in group: "<<groupname<<" in dataset: "<<dataname<<std::endl;
     Rcpp::stop("row_offset ("+std::to_string(static_cast<long long>(row_offset))+") + row_chunksize ("+std::to_string(static_cast<long long>(row_chunksize))+") >datadims[0] ("+std::to_string(static_cast<long long>(datadims[0]))+")");
   }
   if(col_offset+col_chunksize>datadims[1]){
+    Rcpp::Rcerr<<"In file: "<<h5file<<" in group: "<<groupname<<" in dataset: "<<dataname<<std::endl;
     Rcpp::stop("col_offset ("+std::to_string(static_cast<long long>(col_offset))+") + col_chunksize ("+std::to_string(static_cast<long long>(col_chunksize))+") >datadims[1] ("+std::to_string(static_cast<long long>(datadims[1]))+")");
   }
 

@@ -23,9 +23,76 @@ test_that("calcAF works as expected",{
 
 
 
+test_that("'Sparse Matrix' multiply works",{
+
+  nrep <- 30
+  p <- 500
+
+  uhmat <- matrix(rnorm(nrep*p),p,nrep)
+  chunksize <- 200
+  bp <- matrix(0,p,p)
+  chunki <- BBmisc::chunk(1:p,chunk.size = chunksize)
+  names(chunki) <- letters[1:length(chunki)]
+  imatl <- list()
+  gl <- names(chunki)
+  dl <- names(chunki)
+  tf <- tempfile()
+  for(i in 1:length(chunki)){
+    ti <- chunki[[i]]
+    bp[ti,ti] <- runif(length(ti)*length(ti))
+    imatl[[i]] <- bp[ti,ti]
+    write_mat_h5(tf,gl[i],dl[i],imatl[[i]])
+
+  }
+  true_res_t <-t(bp)%*%uhmat
+  cpp_res_t <- RSSp::block_mat_mul(imatl,uhmat,transpose_mat_l = T)
+  expect_equal(true_res_t,cpp_res_t)
+  nres_t <- sparse_matmul(tf,gl,dl,uhmat,T)
+
+  true_res <-bp%*%uhmat
+  cpp_res <- block_mat_mul(imatl,uhmat,transpose_mat_l = F)
+  expect_equal(true_res,cpp_res)
+
+
+  # uh_l <- lapply(indl,function(x,mat)return(mat[x,,drop=F]),mat=uhmat)
+  # sm_mul <- function(imatl,tmat){
+  #   res_mat <- matrix(0,nrow(tmat),ncol(tmat))
+  #   toffset <- c(1,1)
+  #   for(i in 1:length(imatl)){
+  #     lp <- dim(imatl[[i]])
+  #     res_mat[toffset] <- imatl[[i]]%*%tmat[toffset[1],]
+  #     toffset <- toffset+lp
+  #   }
+  #
+  # }
+})
+
+
+test_that("Checking for transpose works",{
+
+  test_mat <-matrix(runif(9*8),9,8)
+  tfile <- tempfile()
+  write_mat_h5(tfile,"test","geno2",data=test_mat,doTranspose = F)
+  write_mat_h5(tfile,"test","geno",data=test_mat,doTranspose = T)
+
+  expect_equal(is_transposed_h5(tfile,"test","geno"),T)
+  expect_equal(is_transposed_h5(tfile,"test","geno2"),F)
+})
 
 
 
+
+test_that("Matrix read/write works with boost",{
+
+  test_mat <-matrix(runif(9*8),9,8)
+  tfile <- tempfile()
+  write_mat_h5(tfile,"test","geno",data=test_mat,deflate_level = 3)
+  rmat <- read_2d_boost_h5(tfile,"test","geno")
+  expect_equal(test_mat,rmat)
+
+
+
+})
 
 test_that("calcvar works as expected",{
   test_mat <-matrix(runif(9*8),9,8)

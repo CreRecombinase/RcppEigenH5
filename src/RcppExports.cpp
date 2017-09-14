@@ -214,6 +214,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// is_transposed_h5
+bool is_transposed_h5(std::string h5file, std::string groupname, std::string dataname);
+RcppExport SEXP _RcppEigenH5_is_transposed_h5(SEXP h5fileSEXP, SEXP groupnameSEXP, SEXP datanameSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type h5file(h5fileSEXP);
+    Rcpp::traits::input_parameter< std::string >::type groupname(groupnameSEXP);
+    Rcpp::traits::input_parameter< std::string >::type dataname(datanameSEXP);
+    rcpp_result_gen = Rcpp::wrap(is_transposed_h5(h5file, groupname, dataname));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_selfpath
 std::string get_selfpath();
 RcppExport SEXP _RcppEigenH5_get_selfpath() {
@@ -693,6 +706,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_RcppEigenH5_read_2d_index_h5", (DL_FUNC) &_RcppEigenH5_read_2d_index_h5, 4},
     {"_RcppEigenH5_read_2d_index_chunk_h5", (DL_FUNC) &_RcppEigenH5_read_2d_index_chunk_h5, 5},
     {"_RcppEigenH5_read_1d_index_h5", (DL_FUNC) &_RcppEigenH5_read_1d_index_h5, 4},
+    {"_RcppEigenH5_is_transposed_h5", (DL_FUNC) &_RcppEigenH5_is_transposed_h5, 3},
     {"_RcppEigenH5_get_selfpath", (DL_FUNC) &_RcppEigenH5_get_selfpath, 0},
     {"_RcppEigenH5_h5ls", (DL_FUNC) &_RcppEigenH5_h5ls, 2},
     {"_RcppEigenH5_h5_rownum", (DL_FUNC) &_RcppEigenH5_h5_rownum, 3},

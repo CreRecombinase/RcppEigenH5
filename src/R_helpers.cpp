@@ -9,6 +9,17 @@ using namespace Rcpp;
 #include <limits.h>
 
 
+//[[Rcpp::export]]
+bool is_transposed_h5(std::string h5file,std::string groupname,std::string dataname){
+  H5FilePtr tf=open_file(h5file);
+  H5GroupPtr grp = open_group(tf,groupname);
+  H5DataSetPtr dst = open_dataset(grp,dataname);
+  const bool ret =check_transpose(dst);
+  dst->close();
+  grp->close();
+  tf->close();
+  return(ret);
+}
 
 
 //[[Rcpp::export]]
@@ -26,7 +37,7 @@ std::string get_selfpath() {
 Rcpp::StringVector h5ls(std::string h5file,std::string base_groupname="/"){
 
 //  H5FilePtr open_file(const std::string fname)
-  H5FilePtr tf=open_file(h5file);
+H5FilePtr tf=open_file(h5file);
 
   H5GroupPtr grp = open_group(tf,base_groupname);
   if(base_groupname!="/"){

@@ -61,6 +61,10 @@ read_1d_index_h5 <- function(h5file, groupname, dataname, indvec) {
     .Call('_RcppEigenH5_read_1d_index_h5', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, indvec)
 }
 
+is_transposed_h5 <- function(h5file, groupname, dataname) {
+    .Call('_RcppEigenH5_is_transposed_h5', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname)
+}
+
 get_selfpath <- function() {
     .Call('_RcppEigenH5_get_selfpath', PACKAGE = 'RcppEigenH5')
 }
