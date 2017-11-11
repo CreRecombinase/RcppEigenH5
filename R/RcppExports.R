@@ -5,6 +5,10 @@ read_2d_boost_h5 <- function(h5file, groupname, dataname) {
     .Call('_RcppEigenH5_read_2d_boost_h5', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname)
 }
 
+match_sorted <- function(query, target) {
+    .Call('_RcppEigenH5_match_sorted_exp', PACKAGE = 'RcppEigenH5', query, target)
+}
+
 rcpsplit <- function(s, delim) {
     .Call('_RcppEigenH5_rcpsplit', PACKAGE = 'RcppEigenH5', s, delim)
 }
@@ -61,6 +65,9 @@ read_1d_index_h5 <- function(h5file, groupname, dataname, indvec) {
     .Call('_RcppEigenH5_read_1d_index_h5', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname, indvec)
 }
 
+#'Some documentation
+#' @param
+#' @export
 is_transposed_h5 <- function(h5file, groupname, dataname) {
     .Call('_RcppEigenH5_is_transposed_h5', PACKAGE = 'RcppEigenH5', h5file, groupname, dataname)
 }
@@ -191,6 +198,10 @@ read_haps <- function(filename, rownum = 0L, colnum = 0L) {
 
 write_haps_h5 <- function(filename, h5file, groupname, dataname, deflate_level, rownum = 0L, colnum = 0L) {
     invisible(.Call('_RcppEigenH5_write_haps_h5', PACKAGE = 'RcppEigenH5', filename, h5file, groupname, dataname, deflate_level, rownum, colnum))
+}
+
+sum_mats <- function(h5files, groupnames, datanames) {
+    .Call('_RcppEigenH5_sum_mats', PACKAGE = 'RcppEigenH5', h5files, groupnames, datanames)
 }
 
 sparse_matmul <- function(h5files, groupnames, datanames, xmat, do_transpose = TRUE) {

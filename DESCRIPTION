@@ -1,11 +1,10 @@
 Package: RcppEigenH5
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Title: Reads and writes HDF5 files
+Version: 0.2.0
+Author: Nicholas Knoblauch
+Maintainer: Nicholas Knoblauch <nwknoblauch@gmail.com>
+Description: RcppEigenH5 provides a simple interface for writing matrices and vectors with the HDF5 file format.
 License: GPL (>=2)
 Imports: Rcpp (>= 0.12.9.2), RcppParallel (>= 4.3.20),RcppEigen,BH
 LinkingTo: Rcpp, RcppParallel, RcppEigen,RcppProgress,BH

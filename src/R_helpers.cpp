@@ -8,7 +8,9 @@ using namespace Rcpp;
 #include <unistd.h>
 #include <limits.h>
 
-
+//'Some documentation
+//' @param
+//' @export
 //[[Rcpp::export]]
 bool is_transposed_h5(std::string h5file,std::string groupname,std::string dataname){
   H5FilePtr tf=open_file(h5file);

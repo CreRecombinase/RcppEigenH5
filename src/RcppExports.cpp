@@ -20,6 +20,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// match_sorted_exp
+Rcpp::IntegerVector match_sorted_exp(const Rcpp::IntegerVector& query, const Rcpp::IntegerVector& target);
+RcppExport SEXP _RcppEigenH5_match_sorted_exp(SEXP querySEXP, SEXP targetSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type query(querySEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type target(targetSEXP);
+    rcpp_result_gen = Rcpp::wrap(match_sorted_exp(query, target));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpsplit
 std::vector<std::string> rcpsplit(const std::string s, const std::string delim);
 RcppExport SEXP _RcppEigenH5_rcpsplit(SEXP sSEXP, SEXP delimSEXP) {
@@ -661,6 +673,19 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// sum_mats
+Rcpp::NumericMatrix sum_mats(StringVector h5files, StringVector groupnames, StringVector datanames);
+RcppExport SEXP _RcppEigenH5_sum_mats(SEXP h5filesSEXP, SEXP groupnamesSEXP, SEXP datanamesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< StringVector >::type h5files(h5filesSEXP);
+    Rcpp::traits::input_parameter< StringVector >::type groupnames(groupnamesSEXP);
+    Rcpp::traits::input_parameter< StringVector >::type datanames(datanamesSEXP);
+    rcpp_result_gen = Rcpp::wrap(sum_mats(h5files, groupnames, datanames));
+    return rcpp_result_gen;
+END_RCPP
+}
 // sparse_matmul
 Rcpp::NumericMatrix sparse_matmul(StringVector h5files, StringVector groupnames, StringVector datanames, Rcpp::NumericMatrix& xmat, bool do_transpose);
 RcppExport SEXP _RcppEigenH5_sparse_matmul(SEXP h5filesSEXP, SEXP groupnamesSEXP, SEXP datanamesSEXP, SEXP xmatSEXP, SEXP do_transposeSEXP) {
@@ -692,6 +717,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_RcppEigenH5_read_2d_boost_h5", (DL_FUNC) &_RcppEigenH5_read_2d_boost_h5, 3},
+    {"_RcppEigenH5_match_sorted_exp", (DL_FUNC) &_RcppEigenH5_match_sorted_exp, 2},
     {"_RcppEigenH5_rcpsplit", (DL_FUNC) &_RcppEigenH5_rcpsplit, 2},
     {"_RcppEigenH5_read_2d_h5_exp", (DL_FUNC) &_RcppEigenH5_read_2d_h5_exp, 5},
     {"_RcppEigenH5_read_1d_h5", (DL_FUNC) &_RcppEigenH5_read_1d_h5, 5},
@@ -739,6 +765,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_RcppEigenH5_file_colnum", (DL_FUNC) &_RcppEigenH5_file_colnum, 1},
     {"_RcppEigenH5_read_haps_exp", (DL_FUNC) &_RcppEigenH5_read_haps_exp, 3},
     {"_RcppEigenH5_write_haps_h5", (DL_FUNC) &_RcppEigenH5_write_haps_h5, 7},
+    {"_RcppEigenH5_sum_mats", (DL_FUNC) &_RcppEigenH5_sum_mats, 3},
     {"_RcppEigenH5_sparse_matmul", (DL_FUNC) &_RcppEigenH5_sparse_matmul, 5},
     {"_RcppEigenH5_concat_mat_chunks", (DL_FUNC) &_RcppEigenH5_concat_mat_chunks, 3},
     {NULL, NULL, 0}

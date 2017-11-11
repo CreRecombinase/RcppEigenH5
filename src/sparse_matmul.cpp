@@ -11,10 +11,80 @@
 using namespace Eigen;
 
 
+
+//[[Rcpp::export]]
+Rcpp::NumericMatrix sum_mats(StringVector h5files, StringVector groupnames,StringVector datanames){
+
+  if(h5files.size()!=groupnames.size()){
+    Rcpp::stop("list of file names must be same length as list of group names");
+  }
+  if(h5files.size()!=datanames.size()){
+    Rcpp::stop("list of file names must be same length as list of data names");
+  }
+  if(groupnames.size()!=datanames.size()){
+    Rcpp::stop("list of group names must be same length as list of data names");
+  }
+
+  typedef std::tuple<std::string,std::string,std::string> path_tup;
+  std::vector<std::tuple<int,int>>dim_vec(h5files.size());
+  std::vector<path_tup> path_vec(dim_vec.size());
+  int num_path = h5files.size();
+  for(size_t i=0;i<num_path;i++){
+    const std::string th5file= Rcpp::as<std::string>(h5files[i]);
+    const std::string tgroupname= Rcpp::as<std::string>(groupnames[i]);
+    const std::string tdataname= Rcpp::as<std::string>(datanames[i]);
+
+    const bool hfile_exists =f_exists(th5file);
+    if(!hfile_exists){
+      Rcpp::Rcerr<<"Missing file: "<<th5file<<std::endl;
+      Rcpp::stop("file does not exist!");
+    }
+    path_vec[i]=std::make_tuple(th5file,tgroupname,tdataname);
+    const int row_chunksize=get_rownum_h5(th5file,tgroupname,tdataname);
+    const int col_chunksize=get_colnum_h5(th5file,tgroupname,tdataname);
+    dim_vec[i]=std::make_tuple(row_chunksize,col_chunksize);
+    if(i>0){
+      if(dim_vec[i]!=dim_vec[i-1]){
+        Rcpp::stop("All datasets to be summed must be of equal dimension");
+      }
+    }
+  }
+
+
+  Rcpp::NumericMatrix retmat(std::get<0>(dim_vec[0]),std::get<1>(dim_vec[0]));
+  Rcpp::NumericMatrix tmat(std::get<0>(dim_vec[0]),std::get<1>(dim_vec[0]));
+  Eigen::Map<Eigen::MatrixXd> tretmat(&retmat[0],retmat.rows(),retmat.cols());
+  tretmat.setZero();
+  Eigen::Map<Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> > ttmat(&tmat[0],tmat.rows(),tmat.cols());
+
+  // read_2ddmat_h5(std::get<0>(path_vec[0]),
+  //                std::get<1>(path_vec[0]),
+  //                std::get<2>(path_vec[0]),
+  //                0,0,
+  //                std::get<0>(dim_vec[0]),
+  //                std::get<1>(dim_vec[0]),
+  //                tretmat.data());
+  Progress p(num_path, true);
+  for(size_t i=0;i<num_path;i++){
+    if (Progress::check_abort() )
+      Rcpp::stop("Interrupted");
+
+    read_2ddmat_h5(std::get<0>(path_vec[i]),
+                   std::get<1>(path_vec[i]),
+                   std::get<2>(path_vec[i]),
+                   0,0,
+                   std::get<0>(dim_vec[i]),
+                   std::get<1>(dim_vec[i]),
+                   ttmat.data());
+    tretmat+=ttmat;
+    p.increment();
+  }
+  return(retmat);
+
+}
+
 //[[Rcpp::export]]
 Rcpp::NumericMatrix sparse_matmul(StringVector h5files, StringVector groupnames,StringVector datanames,Rcpp::NumericMatrix &xmat,bool do_transpose=true){
-
-
 
   std::vector<std::string> tfilenames=Rcpp::as<std::vector<std::string> >(h5files);
   std::vector<std::string> tgroupnames=Rcpp::as<std::vector<std::string> >(groupnames);

@@ -7,12 +7,6 @@
 using namespace Eigen;
 
 
-
-
-
-
-
-
 void read_2dfmat_h5(const std::string h5file, const std::string groupname, const std::string dataname, int row_offset, int col_offset, int row_chunksize, int col_chunksize,  float* data){
 
   //Try breaking up reads in to chunks

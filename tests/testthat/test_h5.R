@@ -1,26 +1,4 @@
 context("h5 compatability")
-# #
-test_that("calcAF works as expected",{
-  test_mat <-matrix(runif(9*8),9,8)
-  test_means <- colMeans(test_mat)/2
-  tfile <- tempfile()
-  write_mat_h5(tfile,"test","geno",data=test_mat)
-  sub_i <- c(1,3,5,7)
-  sub_means <- calc_af(tfile,"test","geno",index = sub_i,chunksize = 2,check_dup = F)
-  expect_equal(test_means[sub_i],sub_means)
-  sub_i <- c(1:8)
-  sub_means <- calc_af(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
-  tmi <- test_mat
-  #  tmi[] <- sample(0:1,9*8,replace = T)
-  #  tmd <- duplicated(tmi,MARGIN = 2)
-  #
-  # # test_means[tmd] <- 0
-  # # expect_equal(test_means[sub_i],sub_means)
-  # # sub_means<-calc_af(tfile,"test","geno",index = sub_i,chunksize = 1,check_dup = T)
-  # # expect_equal(test_means[sub_i],sub_means)
-
-})
-
 
 
 test_that("'Sparse Matrix' multiply works",{
@@ -94,70 +72,6 @@ test_that("Matrix read/write works with boost",{
 
 })
 
-test_that("calcvar works as expected",{
-  test_mat <-matrix(runif(9*8),9,8)
-  test_vars <- apply(test_mat,2,var)
-  tfile <- tempfile()
-  write_mat_h5(tfile,"test","geno",data=test_mat)
-  sub_i <- c(1,3,5,7)
-  sub_vars <- calc_var(tfile,"test","geno",index = sub_i,chunksize = 2)
-  expect_equal(test_vars[sub_i],sub_vars)
-  sub_i <- c(1:8)
-  sub_vars <- calc_var(tfile,"test","geno",index = sub_i,chunksize = 1)
-  expect_equal(test_vars[sub_i],sub_vars)
-
-})
-
-test_that("calc_yh works as expected",{
-  n <- 9
-  p <- 8
-  test_mat <- matrix(runif(n*p),n,p)
-  tpi <- 0.5
-  Z <-rbinom(n = p,size = 1,prob = tpi)
-  beta <-numeric(p)
-  beta[Z==1] <- rnorm(n = sum(Z))
-  yh <- c(scale(test_mat,center = T,scale = F)%*%beta)
-  tfile <- tempfile()
-  write_mat_h5(tfile,"test","test",test_mat)
-  bii <- which(Z==1)
-  t_yh <- calc_yh(h5file = tfile,groupname = "test",dataname = "test",index = bii,beta = beta[bii],chunksize = 2)
-  expect_equal(t_yh,yh)
-})
-
-
-test_that("calc_yh works with 'transposed'  data",{
-  n <- 9
-  p <- 8
-  test_mat <- matrix(runif(n*p),n,p)
-  tpi <- 0.5
-  Z <-rbinom(n = p,size = 1,prob = tpi)
-  beta <-numeric(p)
-  beta[Z==1] <- rnorm(n = sum(Z))
-  yh <- c(scale(test_mat,center=T,scale=F)%*%beta)
-  tfile <- tempfile()
-  write_mat_h5(tfile,"test","test",test_mat,doTranspose = T)
-  bii <- which(Z==1)
-  t_yh <- calc_yh(h5file = tfile,groupname = "test",dataname = "test",index = bii,beta = beta[bii],chunksize = 2)
-  expect_equal(t_yh,yh)
-})
-
-
-
-test_that("calc_yh works with 'transposed' and subset  data",{
-  n <- 9
-  p <- 8
-  test_mat <- matrix(runif(n*p),n,p)
-  tpi <- 0.5
-  Z <-rbinom(n = p,size = 1,prob = tpi)
-  beta <-numeric(p)
-  beta[Z==1] <- rnorm(n = sum(Z))
-  yh <- c(scale(test_mat,center=T,scale=F)%*%beta)
-  tfile <- tempfile()
-  write_mat_h5(tfile,"test","test",test_mat,doTranspose = T)
-  bii <- which(Z==1)
-  t_yh <- calc_yh(h5file = tfile,groupname = "test",dataname = "test",index = bii,beta = beta[bii],chunksize = 2)
-  expect_equal(t_yh,yh)
-})
 
 
 test_that("matrices written and read from h5 reads the same with RcppEigenH5",{
@@ -248,12 +162,46 @@ test_that("string vectors written from h5 are read the same (by RcppEigenH5)",{
   library(h5)
   tessvec <-rep(sample(letters,sample(1:10),replace=T))
   tessvec <- paste0(tessvec,sample(tessvec),sample(tessvec))
-   tfile <- tempfile()
-   th5f <- h5file(tfile,'a')
-   th5f['test'] <- tessvec
-   h5close(th5f)
+  tfile <- tempfile()
+  th5f <- h5file(tfile,'a')
+  th5f['test'] <- tessvec
+  h5close(th5f)
   r_tessvec <- read_svec(tfile,"/","test")
   expect_equal(r_tessvec,tessvec)
+})
+
+
+
+test_that("Numeric vectors with NAs can be read and written",{
+
+  myn <-c(1.2,NA,3)
+  tf <- tempfile()
+  write_dvec_h5(tf,"test","testd",myn)
+  rn <- read_dvec(tf,"test","testd")
+  expect_equal(rn,myn)
+})
+
+
+test_that("String vectors written from RcppEigen will make up groups as they go",{
+
+  tessvec <-rep(sample(letters,sample(1:10),replace=T))
+  tessvec <- paste0(tessvec,sample(tessvec),sample(tessvec))
+  tf <- tempfile()
+  ## No group
+  write_svec_h5(h5file = tf,groupname = "/",dataname = "test",data = tessvec,deflate_level = 4L)
+  r_tessvec <- read_svec(tf,"/","test")
+  expect_equal(r_tessvec,tessvec)
+
+  ## One group
+  write_svec_h5(h5file = tf,groupname = "/one",dataname = "test",data = tessvec,deflate_level = 4L)
+  r_tessvec <- read_svec(tf,"one","test")
+  expect_equal(r_tessvec,tessvec)
+  ## Two groups
+  write_svec_h5(h5file = tf,groupname = "/one/two",dataname = "test",data = tessvec,deflate_level = 4L)
+  r_tessvec <- read_svec(tf,"one/two","test")
+  expect_equal(r_tessvec,tessvec)
+
+
 })
 
 
@@ -601,5 +549,50 @@ test_that("Reading and writng sparse matrices works",{
   tdims <- dim(A)
   res_mat <- read_ccs_h5(tfile,"R",dims = tdims)
   expect_equal(res_mat,A)
+})
+
+
+test_that("reduce sum operations work ",{
+
+  m <-4
+  rownum <- 5
+  colnum <- 6
+  tfv <- character(m)
+  tml <- list()
+  R_sum <- matrix(0,rownum,colnum)
+  for(i in 1:m){
+    tfv[i] <- tempfile()
+    tmat <- matrix(runif(rownum*colnum),rownum,colnum)
+    tml[[i]] <- tmat
+    RcppEigenH5::write_mat_h5(h5file = tfv[i],groupname = as.character(i),dataname = as.character(i),data = tmat)
+    R_sum <- R_sum+tmat
+  }
+
+  c_sum <- RcppEigenH5::sum_mats(tfv[1],as.character(1:m)[1],as.character(1:m)[1])
+  expect_equal(c_sum,tml[[1]])
+  c_sum <- RcppEigenH5::sum_mats(tfv,as.character(1:m),as.character(1:m))
+  expect_equal(c_sum,R_sum)
+})
+
+
+
+test_that("Concatenating matrix chunks works",{
+  m <-4
+  rownum <- 5
+  colnum <- 6
+  tfv <- character(m)
+  tml <- list()
+  R_sum <- matrix(0,0,colnum)
+  for(i in 1:m){
+    tfv[i] <- tempfile()
+    tmat <- matrix(runif(rownum*colnum),rownum,colnum)
+    tml[[i]] <- tmat
+    RcppEigenH5::write_mat_h5(h5file = tfv[i],groupname = as.character(i),dataname = as.character(i),data = tmat)
+    R_sum <- rbind(R_sum,tmat)
+  }
+
+  c_sum <- concat_mat_chunks(tfv,as.character(1:m),as.character(1:m))
+  expect_equal(c_sum,R_sum)
+
 })
 
