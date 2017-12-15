@@ -1,4 +1,49 @@
 
+
+dir2_hdf5 <- function(base_dir,out_file,deflate_level=8L){
+
+  sub_files <- dir(base_dir,full.names = T)
+  sub_dirs<- file.info(sub_files) %>%
+    dplyr::mutate(fname=rownames(.)) %>%
+    dplyr::filter(isdir) %>%
+    select(fname) %>%
+    mutate(groupname=basename(fname))
+
+
+
+  load_obj <- function(f)
+  {
+    env <- new.env()
+    nm <- load(f, env)[1]
+    env[[nm]]
+  }
+  sload_obj <- purrr::possibly(load_obj,otherwise=NULL)
+  swrite_ivec <- purrr::safely(write_ivec_h5)
+  sub_dirl <- split(sub_dirs,sub_dirs$groupname)
+  purrr::map_df(sub_dirl,function(tsub_dirl){
+    cat(tsub_dirl$groupname,"\n")
+    if(!purrr::possibly(group_exists,otherwise=F)(out_file,tsub_dirl$groupname)){
+      all_files <- dir(tsub_dirl$fname,full.names = T,pattern = "*Rdata")
+      gene_names <-gsub("(.+).Rdata","\\1",basename(all_files))
+      prep_dataf <- data_frame(inf=all_files,h5file=out_file,dataname=gene_names,groupname=tsub_dirl$groupname) %>% mutate(input=1:n())
+      tres <- group_by(prep_dataf,input) %>% do({
+        iv <- sload_obj(.$inf)
+        if(!is.null(iv)){
+          res <- swrite_ivec(h5file=.$h5file,groupname = .$groupname,dataname = .$dataname,data = iv,deflate_level=deflate_level)
+        }else{
+          res <- list(error=paste0(.$inf,"Not Found"))
+        }
+        data_frame(filename=.$dataname,write_succeed=is.null(res$error))
+      })
+    }
+  })
+
+
+
+
+}
+
+
 read_attr <- function(h5filename,datapath,attrname){
   requireNamespace("h5")
   h5f <- h5::h5file(h5filename,'r')

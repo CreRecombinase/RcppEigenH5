@@ -296,9 +296,20 @@ std::vector<std::string> groupNames=list_subgroups(file, base_group);
 
 //[[Rcpp::export]]
 Rcpp::LogicalVector group_exists(std::string h5file,std::string base_group="/"){
-Rcpp::LogicalVector res(1);
+  Rcpp::LogicalVector res(1);
   H5FilePtr file=open_file(h5file);
   res(0)=grp_path_exists(file,base_group);
+  file->close();
+  return(res);
+}
+
+//[[Rcpp::export]]
+Rcpp::LogicalVector data_exists(std::string h5file,std::string data_name,std::string base_group="/"){
+  Rcpp::LogicalVector res(1);
+  H5FilePtr file=open_file(h5file);
+  auto tgrp= open_group(file,base_group);
+  res(0)=data_exists(tgrp,data_name);
+  tgrp->close();
   file->close();
   return(res);
 }

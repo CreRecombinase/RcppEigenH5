@@ -112,6 +112,10 @@ group_exists <- function(h5file, base_group = "/") {
     .Call('_RcppEigenH5_group_exists', PACKAGE = 'RcppEigenH5', h5file, base_group)
 }
 
+data_exists <- function(h5file, data_name, base_group = "/") {
+    .Call('_RcppEigenH5_data_exists', PACKAGE = 'RcppEigenH5', h5file, data_name, base_group)
+}
+
 list_attrs_h5 <- function(h5file, base_group = "/") {
     .Call('_RcppEigenH5_h5ls_attr_exp', PACKAGE = 'RcppEigenH5', h5file, base_group)
 }

@@ -128,3 +128,16 @@ H5DataSetPtr open_dataset(H5GroupPtr &group,const std::string &dataname)
   return H5DataSetPtr(dataset);
 }
 
+bool data_exists(const H5GroupPtr grp, const std::string dataname){
+  hsize_t objc = grp->getNumObjs();
+  for(hsize_t i=0; i<objc;i++){
+    std::string tst=grp->getObjnameByIdx(i);
+    if(tst==dataname){
+      if(grp->getObjTypeByIdx(i)!=H5G_GROUP){
+        return(true);
+      }
+    }
+  }
+  return(false);
+}
+

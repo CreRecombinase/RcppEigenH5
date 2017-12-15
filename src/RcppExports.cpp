@@ -378,6 +378,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// data_exists
+Rcpp::LogicalVector data_exists(std::string h5file, std::string data_name, std::string base_group);
+RcppExport SEXP _RcppEigenH5_data_exists(SEXP h5fileSEXP, SEXP data_nameSEXP, SEXP base_groupSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type h5file(h5fileSEXP);
+    Rcpp::traits::input_parameter< std::string >::type data_name(data_nameSEXP);
+    Rcpp::traits::input_parameter< std::string >::type base_group(base_groupSEXP);
+    rcpp_result_gen = Rcpp::wrap(data_exists(h5file, data_name, base_group));
+    return rcpp_result_gen;
+END_RCPP
+}
 // h5ls_attr_exp
 std::vector<std::string> h5ls_attr_exp(std::string h5file, std::string base_group);
 RcppExport SEXP _RcppEigenH5_h5ls_attr_exp(SEXP h5fileSEXP, SEXP base_groupSEXP) {
@@ -743,6 +756,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_RcppEigenH5_calc_yh", (DL_FUNC) &_RcppEigenH5_calc_yh, 7},
     {"_RcppEigenH5_h5ls_grp_exp", (DL_FUNC) &_RcppEigenH5_h5ls_grp_exp, 2},
     {"_RcppEigenH5_group_exists", (DL_FUNC) &_RcppEigenH5_group_exists, 2},
+    {"_RcppEigenH5_data_exists", (DL_FUNC) &_RcppEigenH5_data_exists, 3},
     {"_RcppEigenH5_h5ls_attr_exp", (DL_FUNC) &_RcppEigenH5_h5ls_attr_exp, 2},
     {"_RcppEigenH5_get_h5_version_exp", (DL_FUNC) &_RcppEigenH5_get_h5_version_exp, 0},
     {"_RcppEigenH5_read_data_attr_h5_exp", (DL_FUNC) &_RcppEigenH5_read_data_attr_h5_exp, 4},
